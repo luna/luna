@@ -1,18 +1,17 @@
 package org.enso.interpreter.runtime.scope;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.interop.TruffleObject;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
-import com.oracle.truffle.api.interop.TruffleObject;
+import java.util.function.BiFunction;
 import org.enso.interpreter.runtime.Module;
 import org.enso.interpreter.runtime.callable.atom.AtomConstructor;
 import org.enso.interpreter.runtime.callable.function.Function;
-import org.enso.interpreter.runtime.error.RedefinedMethodException;
 
 /** A representation of Enso's per-file top-level scope. */
 public class ModuleScope implements TruffleObject {
@@ -21,6 +20,7 @@ public class ModuleScope implements TruffleObject {
   private Map<String, Object> polyglotSymbols = new HashMap<>();
   private Map<String, AtomConstructor> constructors = new HashMap<>();
   private Map<AtomConstructor, Map<String, Function>> methods = new HashMap<>();
+  private Map<AtomConstructor, Map<AtomConstructor, Function>> conversions = new HashMap<>();
   private Set<ModuleScope> imports = new HashSet<>();
   private Set<ModuleScope> exports = new HashSet<>();
 
@@ -117,9 +117,41 @@ public class ModuleScope implements TruffleObject {
     Map<String, Function> methodMap = ensureMethodMapFor(atom);
 
     if (methodMap.containsKey(method)) {
-      throw new RedefinedMethodException(atom.getName(), method);
+      throw new IllegalStateException(
+          "Redefinitions of methods in the same module should be handled by the compiler.");
     } else {
       methodMap.put(method, function);
+    }
+  }
+
+  private Map<AtomConstructor, Function> ensureConversionMapFor(AtomConstructor cons) {
+    return conversions.computeIfAbsent(cons, k -> new HashMap<>());
+  }
+
+  private Map<AtomConstructor, Function> getConversionMapFor(AtomConstructor cons) {
+    Map<AtomConstructor, Function> result = conversions.get(cons);
+    if (result == null) {
+      return new HashMap<>();
+    }
+    return result;
+  }
+
+  /**
+   * Registers a conversion defined for given source and target types.
+   *
+   * @param targetType the type being converted "to"
+   * @param sourceType the type being converted "from"
+   * @param function the {@link Function} associated with this definition
+   */
+  private void registerConversion(
+      AtomConstructor targetType, AtomConstructor sourceType, Function function) {
+    Map<AtomConstructor, Function> conversionsMap = ensureConversionMapFor(targetType);
+
+    if (conversionsMap.containsKey(sourceType)) {
+      throw new IllegalStateException(
+          "Redefinitions of conversions in the same module should be handled by the compiler.");
+    } else {
+      conversionsMap.put(sourceType, function);
     }
   }
 
@@ -184,6 +216,38 @@ public class ModuleScope implements TruffleObject {
         .orElse(null);
   }
 
+  // TODO [AA] Abstract the lookup out using generics and lambdas.
+  // TODO [AA] Use a test case of `lookupMethodDefinition` to check the types are right.
+
+  @CompilerDirectives.TruffleBoundary
+  private <K> Function lookupDefinition(
+      AtomConstructor _this,
+      K key,
+      BiFunction<ModuleScope, AtomConstructor, Map<K, Function>> getter) {
+    Function definedWithThis = getter.apply(_this.getDefinitionScope(), _this).get(key);
+    if (definedWithThis != null) {
+      return definedWithThis;
+    }
+
+    Function definedHere = getter.apply(this, _this).get(key);
+    if (definedHere != null) {
+      return definedHere;
+    }
+
+    return imports.stream()
+        .map(scope -> scope.getExportedDefinition(_this, key, getter))
+        .filter(Objects::nonNull)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private <K> Function getExportedDefinition(
+      AtomConstructor atom,
+      K key,
+      BiFunction<ModuleScope, AtomConstructor, Map<K, Function>> getter) {
+    throw new IllegalStateException();
+  }
+
   /**
    * Adds a dependency for this module.
    *
@@ -202,6 +266,17 @@ public class ModuleScope implements TruffleObject {
     exports.add(scope);
   }
 
+  /** @return the set of modules imported by this module */
+  public Set<ModuleScope> getImports() {
+    return imports;
+  }
+
+  /** @return the set of modules exported by this module. */
+  public Set<ModuleScope> getExports() {
+    return exports;
+  }
+
+  /** @return the raw constructors held by this module */
   public Map<String, AtomConstructor> getConstructors() {
     return constructors;
   }
@@ -211,11 +286,17 @@ public class ModuleScope implements TruffleObject {
     return methods;
   }
 
-  /** @return the polyglot symbols imported into this scope. */
+  /** @return the polyglot symbols imported into this scope */
   public Map<String, Object> getPolyglotSymbols() {
     return polyglotSymbols;
   }
 
+  /** @return the raw conversions map held by this module */
+  public Map<AtomConstructor, Map<AtomConstructor, Function>> getConversions() {
+    return conversions;
+  }
+
+  /** Reset the module scope. */
   public void reset() {
     imports = new HashSet<>();
     exports = new HashSet<>();
