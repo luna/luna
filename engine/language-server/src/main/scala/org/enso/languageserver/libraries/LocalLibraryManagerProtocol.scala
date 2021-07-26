@@ -2,8 +2,6 @@ package org.enso.languageserver.libraries
 
 import org.enso.editions.LibraryName
 
-import java.nio.file.Path
-
 object LocalLibraryManagerProtocol {
 
   /** A top class representing any request to the [[LocalLibraryManager]]. */
@@ -39,9 +37,10 @@ object LocalLibraryManagerProtocol {
     license: String
   ) extends Request
 
-  /** A request to find the path to a local library. */
-  case class FindLibrary(libraryName: LibraryName) extends Request
-
-  /** A response to [[FindLibrary]]. */
-  case class FindLibraryResponse(libraryRoot: Option[Path])
+  /** A request to publish a library. */
+  case class Publish(
+    libraryName: LibraryName,
+    authToken: String,
+    bumpVersionAfterPublish: Boolean
+  ) extends Request
 }

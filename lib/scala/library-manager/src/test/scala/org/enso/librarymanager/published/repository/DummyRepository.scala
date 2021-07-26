@@ -3,7 +3,6 @@ package org.enso.librarymanager.published.repository
 import nl.gn0s1s.bump.SemVer
 import org.enso.cli.OS
 import org.enso.distribution.FileSystem
-import org.enso.downloader.archive.TarGzWriter
 import org.enso.editions.Editions.RawEdition
 import org.enso.editions.{Editions, LibraryName}
 import org.enso.pkg.{Package, PackageManager}
@@ -49,13 +48,10 @@ abstract class DummyRepository {
         .resolve(lib.version.toString)
       Files.createDirectories(libraryRoot)
       createLibraryProject(libraryRoot, lib)
-
-      TarGzWriter
-        .createArchive(libraryRoot.resolve("main.tgz")) { writer =>
-          writer.writeTextFile("src/Main.enso", lib.mainContent)
-        }
-        .get
-
+      val files = Seq(
+        ArchiveWriter.TextFile("src/Main.enso", lib.mainContent)
+      )
+      ArchiveWriter.writeTarArchive(libraryRoot.resolve("main.tgz"), files)
       createManifest(libraryRoot)
     }
   }
@@ -110,18 +106,12 @@ abstract class DummyRepository {
     * @param port port to listen on
     * @param root root of the library repository, the same as the argument to
     *             [[createRepository]]
-    * @param uploads specifies whether to enable uploads in the server
     */
-  def startServer(
-    port: Int,
-    root: Path,
-    uploads: Boolean = false
-  ): WrappedProcess = {
+  def startServer(port: Int, root: Path): WrappedProcess = {
     val serverDirectory =
       Path.of("tools/simple-library-server").toAbsolutePath.normalize
 
-    val preinstallCommand =
-      commandPrefix ++ Seq(npmCommand, "install")
+    val preinstallCommand = commandPrefix ++ Seq(npmCommand, "install")
     val preinstallExitCode = new ProcessBuilder()
       .command(preinstallCommand: _*)
       .directory(serverDirectory.toFile)
@@ -135,7 +125,6 @@ abstract class DummyRepository {
         s"npm exited with code $preinstallCommand."
       )
 
-    val uploadsArgs = if (uploads) Seq("--upload", "no-auth") else Seq()
     val command = commandPrefix ++ Seq(
       nodeCommand,
       "main.js",
@@ -143,7 +132,7 @@ abstract class DummyRepository {
       port.toString,
       "--root",
       root.toAbsolutePath.normalize.toString
-    ) ++ uploadsArgs
+    )
     val rawProcess = (new ProcessBuilder)
       .command(command: _*)
       .directory(serverDirectory.toFile)

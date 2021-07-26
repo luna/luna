@@ -1,7 +1,5 @@
 package org.enso.compiler.test.context
 
-import java.util.UUID
-
 import org.enso.compiler.Passes
 import org.enso.compiler.context.{
   FreshNameSupply,
@@ -11,9 +9,12 @@ import org.enso.compiler.context.{
 import org.enso.compiler.core.IR
 import org.enso.compiler.pass.PassManager
 import org.enso.compiler.test.CompilerTest
+import org.enso.docs.generator.DocParserWrapper
 import org.enso.pkg.QualifiedName
 import org.enso.polyglot.Suggestion
 import org.enso.polyglot.data.Tree
+
+import java.util.UUID
 
 class SuggestionBuilderTest extends CompilerTest {
 
@@ -25,6 +26,16 @@ class SuggestionBuilderTest extends CompilerTest {
       module            = Module.toString,
       documentation     = None,
       documentationHtml = None,
+      reexport          = None
+    ),
+    Vector()
+  )
+  private val moduleDoc = "Module doc"
+  private val DoccedModuleNode = Tree.Node(
+    Suggestion.Module(
+      module            = Module.toString,
+      documentation     = Some(" " + moduleDoc),
+      documentationHtml = Some(DocParserWrapper.runOnPureDoc(moduleDoc)),
       reexport          = None
     ),
     Vector()
@@ -68,13 +79,15 @@ class SuggestionBuilderTest extends CompilerTest {
       implicit val moduleContext: ModuleContext = freshModuleContext
 
       val code =
-        """## The foo
+        """## Module doc
+          |
+          |## The foo
           |foo = 42""".stripMargin
       val module = code.preprocessModule
 
       build(code, module) shouldEqual Tree.Root(
         Vector(
-          ModuleNode,
+          DoccedModuleNode,
           Tree.Node(
             Suggestion.Method(
               externalId = None,
@@ -98,14 +111,16 @@ class SuggestionBuilderTest extends CompilerTest {
       implicit val moduleContext: ModuleContext = freshModuleContext
 
       val code =
-        """## The foo
+        """## Module doc
+          |
+          |## The foo
           |foo : Number
           |foo = 42""".stripMargin
       val module = code.preprocessModule
 
       build(code, module) shouldEqual Tree.Root(
         Vector(
-          ModuleNode,
+          DoccedModuleNode,
           Tree.Node(
             Suggestion.Method(
               externalId = None,
@@ -1084,13 +1099,15 @@ class SuggestionBuilderTest extends CompilerTest {
       implicit val moduleContext: ModuleContext = freshModuleContext
 
       val code =
-        """## My sweet type
+        """## Module doc
+          |
+          |## My sweet type
           |type MyType a b""".stripMargin
       val module = code.preprocessModule
 
       build(code, module) shouldEqual Tree.Root(
         Vector(
-          ModuleNode,
+          DoccedModuleNode,
           Tree.Node(
             Suggestion.Atom(
               externalId = None,
@@ -1207,7 +1224,9 @@ class SuggestionBuilderTest extends CompilerTest {
       implicit val moduleContext: ModuleContext = freshModuleContext
 
       val code =
-        """## When in doubt
+        """## Module doc
+          |
+          |## When in doubt
           |type Maybe
           |    ## Nothing here
           |    type Nothing
@@ -1217,7 +1236,7 @@ class SuggestionBuilderTest extends CompilerTest {
 
       build(code, module) shouldEqual Tree.Root(
         Vector(
-          ModuleNode,
+          DoccedModuleNode,
           Tree.Node(
             Suggestion.Atom(
               externalId        = None,
@@ -1808,6 +1827,47 @@ class SuggestionBuilderTest extends CompilerTest {
       )
     }
 
+    "build module with documentation" in {
+      implicit val moduleContext: ModuleContext = freshModuleContext
+
+      val code =
+        """## Module doc
+          |
+          |## The foo
+          |foo = 42""".stripMargin
+      val module = code.preprocessModule
+
+      build(code, module) shouldEqual Tree.Root(
+        Vector(
+          Tree.Node(
+            Suggestion.Module(
+              "Unnamed.Test",
+              Some(" Module doc"),
+              Some(
+                "<html><body><div class=\"doc\" style=\"font-size: 13px;\"><div><div class=\"\"><p>Module doc</p></div></div></div></body></html>"
+              ),
+              None
+            ),
+            Vector()
+          ),
+          Tree.Node(
+            Suggestion.Method(
+              externalId = None,
+              module     = "Unnamed.Test",
+              name       = "foo",
+              arguments = Seq(
+                Suggestion.Argument("this", "Unnamed.Test", false, false, None)
+              ),
+              selfType          = "Unnamed.Test",
+              returnType        = SuggestionBuilder.Any,
+              documentation     = Some(" The foo"),
+              documentationHtml = Some(htmlDoc("<p>The foo</p>"))
+            ),
+            Vector()
+          )
+        )
+      )
+    }
   }
 
   private def build(source: String, ir: IR.Module): Tree.Root[Suggestion] =

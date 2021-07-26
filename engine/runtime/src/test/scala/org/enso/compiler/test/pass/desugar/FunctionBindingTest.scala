@@ -175,7 +175,8 @@ class FunctionBindingTest extends CompilerTest {
 
     "retain documentation comments and annotations associated with them" in {
       val ir =
-        s"""
+        s"""## Module doc
+           |
            |## My documentation for this conversion.
            |@My_Annotation
            |My_Type.$from (that : Value) = that

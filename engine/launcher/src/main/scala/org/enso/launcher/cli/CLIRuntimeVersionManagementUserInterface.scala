@@ -18,7 +18,7 @@ import org.enso.runtimeversionmanager.components.{
 class CLIRuntimeVersionManagementUserInterface(
   cliOptions: GlobalCLIOptions,
   alwaysInstallMissing: Boolean
-) extends CLIProgressReporter(hideProgress = cliOptions.hideProgress)
+) extends CLIProgressReporter(cliOptions)
     with RuntimeVersionManagementUserInterface {
 
   private val logger = Logger[CLIRuntimeVersionManagementUserInterface]

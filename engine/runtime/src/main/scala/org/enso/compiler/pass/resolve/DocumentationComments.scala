@@ -10,6 +10,9 @@ import org.enso.compiler.pass.desugar.{ComplexType, GenerateMethodBodies}
 
 /** Associates doc comments with the commented entities as metadata.
   *
+  * If the first module definition is a documentation comment, it is treated as
+  * the module documentation.
+  *
   * This pass has no configuration.
   *
   * This pass requires the context to provide:
@@ -159,7 +162,12 @@ case object DocumentationComments extends IRPass {
     * @return `ir`, with any doc comments associated with nodes as metadata
     */
   private def resolveModule(ir: IR.Module): IR.Module = {
-    val newBindings = resolveList(ir.bindings).map(resolveDefinition)
+    val newBindings = (ir.bindings.headOption match {
+      case Some(doc: IR.Comment.Documentation) =>
+        ir.updateMetadata(this -->> Doc(doc.doc))
+        resolveList(ir.bindings.drop(1))
+      case _ => resolveList(ir.bindings)
+    }).map(resolveDefinition)
     ir.copy(bindings = newBindings)
   }
 

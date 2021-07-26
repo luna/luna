@@ -14,7 +14,6 @@ import org.enso.version.VersionDescription
 import org.graalvm.polyglot.PolyglotException
 
 import java.io.File
-import java.nio.file.Path
 import java.util.UUID
 import scala.Console.err
 import scala.jdk.CollectionConverters._
@@ -44,9 +43,6 @@ object Main {
   private val LOG_LEVEL                   = "log-level"
   private val LOGGER_CONNECT              = "logger-connect"
   private val NO_LOG_MASKING              = "no-log-masking"
-  private val UPLOAD_OPTION               = "upload"
-  private val HIDE_PROGRESS               = "hide-progress"
-  private val AUTH_TOKEN                  = "auth-token"
 
   private lazy val logger = Logger[Main.type]
 
@@ -197,27 +193,6 @@ object Main {
         "variable."
       )
       .build()
-    val uploadOption = CliOption.builder
-      .hasArg(true)
-      .numberOfArgs(1)
-      .argName("url")
-      .longOpt(UPLOAD_OPTION)
-      .desc(
-        "Uploads the library to a repository. " +
-        "The url defines the repository to upload to."
-      )
-      .build()
-    val hideProgressOption = CliOption.builder
-      .longOpt(HIDE_PROGRESS)
-      .desc("If specified, progress bars will not be displayed.")
-      .build()
-    val authTokenOption = CliOption.builder
-      .hasArg(true)
-      .numberOfArgs(1)
-      .argName("token")
-      .longOpt(AUTH_TOKEN)
-      .desc("Authentication token for the upload.")
-      .build()
 
     val options = new Options
     options
@@ -242,9 +217,6 @@ object Main {
       .addOption(logLevelOption)
       .addOption(loggerConnectOption)
       .addOption(noLogMaskingOption)
-      .addOption(uploadOption)
-      .addOption(hideProgressOption)
-      .addOption(authTokenOption)
 
     options
   }
@@ -662,27 +634,6 @@ object Main {
         authorName  = Option(line.getOptionValue(PROJECT_AUTHOR_NAME_OPTION)),
         authorEmail = Option(line.getOptionValue(PROJECT_AUTHOR_EMAIL_OPTION))
       )
-    }
-
-    if (line.hasOption(UPLOAD_OPTION)) {
-      val projectRoot =
-        Option(line.getOptionValue(IN_PROJECT_OPTION))
-          .map(Path.of(_))
-          .getOrElse {
-            logger.error(
-              s"When uploading, the $IN_PROJECT_OPTION is mandatory " +
-              s"to specify which project to upload."
-            )
-            exitFail()
-          }
-
-      ProjectUploader.uploadProject(
-        projectRoot  = projectRoot,
-        uploadUrl    = line.getOptionValue(UPLOAD_OPTION),
-        authToken    = Option(line.getOptionValue(AUTH_TOKEN)),
-        showProgress = !line.hasOption(HIDE_PROGRESS)
-      )
-      exitSuccess()
     }
 
     if (line.hasOption(RUN_OPTION)) {

@@ -5,12 +5,8 @@ import com.typesafe.scalalogging.LazyLogging
 import org.enso.distribution.{DistributionManager, FileSystem}
 import org.enso.editions.{Editions, LibraryName}
 import org.enso.languageserver.libraries.LocalLibraryManagerProtocol._
-import org.enso.librarymanager.local.{
-  DefaultLocalLibraryProvider,
-  LocalLibraryProvider
-}
+import org.enso.librarymanager.local.LocalLibraryProvider
 import org.enso.pkg.PackageManager
-import org.enso.pkg.validation.NameValidation
 
 import java.io.File
 import java.nio.file.Files
@@ -38,18 +34,9 @@ class LocalLibraryManager(
         sender() ! listLocalLibraries()
       case Create(libraryName, authors, maintainers, license) =>
         sender() ! createLibrary(libraryName, authors, maintainers, license)
-      case FindLibrary(libraryName) =>
-        sender() ! findLibrary(libraryName)
-    }
-  }
-
-  /** Checks if the library name is a valid Enso module name. */
-  private def validateLibraryName(libraryName: LibraryName): Unit = {
-    // TODO [RW] more specific exceptions
-    NameValidation.validateName(libraryName.name) match {
-      case Left(error) =>
-        throw new RuntimeException(s"Library name is not valid: [$error].")
-      case Right(_) =>
+      case Publish(_, _, _) =>
+        logger.error("Publishing libraries is currently not implemented.")
+        sender() ! Failure(new NotImplementedError())
     }
   }
 
@@ -66,8 +53,6 @@ class LocalLibraryManager(
   ): Try[Unit] = Try {
     // TODO [RW] modify protocol to be able to create Contact instances
     val _ = (authors, maintainers)
-
-    validateLibraryName(libraryName)
 
     // TODO [RW] make the exceptions more relevant
     val possibleRoots = LazyList
@@ -117,17 +102,6 @@ class LocalLibraryManager(
       namespace = namespaceDir.getFileName.toString
       name      = nameDir.getFileName.toString
     } yield LibraryName(namespace, name)
-  }
-
-  /** Finds the path on the filesystem to a local library. */
-  private def findLibrary(
-    libraryName: LibraryName
-  ): Try[FindLibraryResponse] = Try {
-    val localLibraryProvider = new DefaultLocalLibraryProvider(
-      distributionManager.paths.localLibrariesSearchPaths.toList
-    )
-    val pathOpt = localLibraryProvider.findLibrary(libraryName)
-    FindLibraryResponse(pathOpt)
   }
 
   /** Finds the edition associated with the current project, if specified in its

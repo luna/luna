@@ -16,7 +16,7 @@ env:
   # Please ensure that this is in sync with rustVersion in build.sbt
   rustToolchain: nightly-2021-05-12
   # Some moderately recent version of Node.JS is needed to run the library download tests.
-  nodeVersion: 14.17.2
+  nodeVersion: 12.18.4
 
 jobs:
   test_and_publish:

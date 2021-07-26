@@ -103,7 +103,8 @@ class GenerateDocumentationTest extends CompilerTest with Inside {
     "be associated with atoms and methods" in {
       implicit val moduleContext: ModuleContext = mkModuleContext
       val ir =
-        """
+        """## Module Docs
+          |
           |## This is doc for My_Atom
           |type My_Atom a b c
           |

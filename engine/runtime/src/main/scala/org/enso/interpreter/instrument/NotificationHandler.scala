@@ -51,7 +51,6 @@ object NotificationHandler {
     /** @inheritdoc */
     override def trackProgress(message: String, task: TaskProgress[_]): Unit = {
       logger.info(message)
-      // TODO [RW] check the hideProgress flag provided by the launcher
       if (System.console() != null) {
         ProgressBar.waitWithProgress(task)
       }

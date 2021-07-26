@@ -9,8 +9,8 @@ object Suggestions {
 
   val module: Suggestion.Module = Suggestion.Module(
     module            = "Test.Main",
-    documentation     = None,
-    documentationHtml = None
+    documentation     = Some("Module doc"),
+    documentationHtml = Some("<html></html>")
   )
 
   val atom: Suggestion.Atom = Suggestion.Atom(

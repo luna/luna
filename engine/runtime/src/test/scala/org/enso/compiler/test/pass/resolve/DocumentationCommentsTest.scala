@@ -80,24 +80,47 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
   // === The Tests ============================================================
 
   "Documentation comments in the top scope" should {
-    "be associated with atoms and methods" in {
-      implicit val moduleContext: ModuleContext = mkModuleContext
-      val ir =
-        """
-          |## This is doc for My_Atom
-          |type My_Atom a b c
-          |
-          |## This is doc for my_method
-          |MyAtom.my_method x = x + this
-          |
-          |""".stripMargin.preprocessModule.resolve
+    implicit val moduleContext: ModuleContext = mkModuleContext
+    val ir =
+      """
+        |## My module documentation
+        |
+        |## This is doc for My_Atom
+        |type My_Atom a b c
+        |
+        |## This is doc for my_method
+        |MyAtom.my_method x = x + this
+        |
+        |""".stripMargin.preprocessModule.resolve
 
+    "be associated with atoms and methods" in {
       ir.bindings.length shouldEqual 2
       ir.bindings(0) shouldBe an[IR.Module.Scope.Definition.Atom]
       ir.bindings(1) shouldBe an[IR.Module.Scope.Definition.Method]
 
       getDoc(ir.bindings(0)) shouldEqual " This is doc for My_Atom"
       getDoc(ir.bindings(1)) shouldEqual " This is doc for my_method"
+    }
+
+    "be associated with modules" in {
+      getDoc(ir) shouldEqual " My module documentation"
+    }
+
+    "not be associated with modules when not the first entity" in {
+      implicit val moduleContext: ModuleContext = mkModuleContext
+      val ir =
+        """from Standard.Base import al
+          |
+          |## My module documentation
+          |
+          |## This is doc for My_Atom
+          |type My_Atom a b c
+          |
+          |## This is doc for my_method
+          |MyAtom.my_method x = x + this
+          |""".stripMargin.preprocessModule.resolve
+
+      ir.getMetadata(DocumentationComments) should not be defined
     }
   }
 
@@ -174,7 +197,8 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
     implicit val moduleContext: ModuleContext = mkModuleContext
     "assign docs to all entities" in {
       val ir =
-        """
+        """## My Module documentation
+          |
           |## the type Foo
           |type Foo
           |    ## the constructor Bar
@@ -212,7 +236,9 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
         buildModuleContext(freshNameSupply = Some(new FreshNameSupply))
 
       val module =
-        """## The foo
+        """## Module docs
+          |
+          |## The foo
           |foo : Integer
           |foo = 42""".stripMargin.preprocessModule
       val foo = module.bindings.head
@@ -227,7 +253,8 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
         buildModuleContext(freshNameSupply = Some(new FreshNameSupply))
 
       val ir =
-        """
+        """## Module Docs
+          |
           |## the type Foo
           |type Foo
           |    ## the constructor Bar

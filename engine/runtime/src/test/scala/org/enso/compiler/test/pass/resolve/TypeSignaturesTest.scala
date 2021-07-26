@@ -124,7 +124,9 @@ class TypeSignaturesTest extends CompilerTest {
 
     "reattach documentation to method definitions" in {
       val ir =
-        """## My bar
+        """## Module doc
+          |
+          |## My bar
           |bar : Number -> Number -> Number
           |bar a b = a + b
           |""".stripMargin.preprocessModule.resolve

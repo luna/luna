@@ -164,7 +164,6 @@ object LibraryApi {
       namespace: String,
       name: String,
       authToken: String,
-      uploadUrl: String,
       bumpVersionAfterPublish: Option[Boolean]
     )
 
@@ -230,18 +229,6 @@ object LibraryApi {
       json""" { 
             "namespace" : ${name.namespace},
             "name" : ${name.name}
-            } """
-    )
-  }
-
-  case class InvalidLibraryName(
-    originalName: String,
-    suggestedName: String,
-    reason: String
-  ) extends Error(8009, s"[$originalName] is not a valid name: $reason.") {
-    override def payload: Option[Json] = Some(
-      json""" {
-            "suggestedName" : $suggestedName
             } """
     )
   }

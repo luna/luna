@@ -3,9 +3,7 @@ package org.enso.launcher.components
 import akka.http.scaladsl.model.Uri
 import nl.gn0s1s.bump.SemVer
 import org.enso.distribution.{DistributionManager, EditionManager, Environment}
-import org.enso.launcher.Constants
 import org.enso.launcher.project.ProjectManager
-import org.enso.logger.masking.MaskedPath
 import org.enso.loggingservice.LogLevel
 import org.enso.runtimeversionmanager.components.RuntimeVersionManager
 import org.enso.runtimeversionmanager.config.GlobalConfigurationManager
@@ -193,51 +191,4 @@ class LauncherRunner(
       )
     }
   }
-
-  /** Creates [[RunSettings]] for uploading a library.
-    *
-    * See [[org.enso.launcher.Launcher.uploadLibrary]] for more details.
-    */
-  def uploadLibrary(
-    path: Option[Path],
-    uploadUrl: String,
-    token: Option[String],
-    hideProgress: Boolean,
-    logLevel: LogLevel,
-    logMasking: Boolean,
-    additionalArguments: Seq[String]
-  ): Try[RunSettings] =
-    Try {
-      val actualPath = path.getOrElse(currentWorkingDirectory)
-      val project = projectManager.findProject(actualPath).get.getOrElse {
-        throw RunnerError(
-          s"Could not find a project at " +
-          s"${MaskedPath(actualPath).applyMasking()} or any of its parent " +
-          s"directories."
-        )
-      }
-
-      val version = resolveVersion(None, Some(project))
-      if (version < Constants.uploadIntroducedVersion) {
-        throw RunnerError(
-          s"Library Upload feature is not available in Enso $version. " +
-          s"Please upgrade your project to a newer version."
-        )
-      }
-
-      val tokenOpts = token.map(Seq("--auth-token", _)).toSeq.flatten
-      val hideProgressOpts =
-        if (hideProgress) Seq("--hide-progress") else Seq.empty
-
-      val arguments =
-        Seq("--upload", uploadUrl) ++
-        Seq("--in-project", project.path.toAbsolutePath.normalize.toString) ++
-        tokenOpts ++ hideProgressOpts
-      RunSettings(
-        version,
-        arguments ++ setLogLevelArgs(logLevel, logMasking)
-        ++ additionalArguments,
-        connectLoggerIfAvailable = true
-      )
-    }
 }

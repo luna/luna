@@ -157,7 +157,6 @@ object HTTPDownload {
         "akka.library-extensions",
         ConfigValueFactory.fromAnyRef(Seq.empty.asJava)
       )
-      .withValue("akka.daemonic", ConfigValueFactory.fromAnyRef("on"))
       .withValue("akka.loggers", ConfigValueFactory.fromAnyRef(loggers))
       .withValue(
         "akka.logging-filter",

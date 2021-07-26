@@ -89,6 +89,10 @@ for more information). By way of example:
    until I unindent again.
 ```
 
+Documentation blocks are associated with the _next_ entity in the file, except
+for if they occur as the _very first_ entity in the file. In this case, they are
+treated as the module's documentation.
+
 Documentation comments are _not_ allowed inside textual interpolations.
 
 The tool that generates this documentation aims to be fairly robust, and tries
