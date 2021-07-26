@@ -20,10 +20,7 @@ import org.enso.languageserver.text.TextProtocol.{
   OpenFile,
   SaveFile
 }
-import org.enso.searcher.FileVersionsRepo
 import org.enso.text.ContentBasedVersioning
-
-import scala.concurrent.Future
 
 /** An actor that routes request regarding text editing to the right buffer.
   * It creates a buffer actor, if a buffer doesn't exists.
@@ -56,13 +53,11 @@ import scala.concurrent.Future
   *
   * }}}
   *
-  * @param versionsRepo a repo containing versions of indexed files
   * @param fileManager a file manager
   * @param runtimeConnector a gateway to the runtime
   * @param versionCalculator a content based version calculator
   */
 class BufferRegistry(
-  versionsRepo: FileVersionsRepo[Future],
   fileManager: ActorRef,
   runtimeConnector: ActorRef
 )(implicit
@@ -102,7 +97,6 @@ class BufferRegistry(
           context.actorOf(
             CollaborativeBuffer.props(
               path,
-              versionsRepo,
               fileManager,
               runtimeConnector
             )
@@ -157,19 +151,17 @@ object BufferRegistry {
 
   /** Creates a configuration object used to create a [[BufferRegistry]]
     *
-    * @param versionsRepo a repo containing versions of indexed files
     * @param fileManager a file manager actor
     * @param runtimeConnector a gateway to the runtime
     * @param versionCalculator a content based version calculator
     * @return a configuration object
     */
   def props(
-    versionsRepo: FileVersionsRepo[Future],
     fileManager: ActorRef,
     runtimeConnector: ActorRef
   )(implicit
     versionCalculator: ContentBasedVersioning
   ): Props =
-    Props(new BufferRegistry(versionsRepo, fileManager, runtimeConnector))
+    Props(new BufferRegistry(fileManager, runtimeConnector))
 
 }

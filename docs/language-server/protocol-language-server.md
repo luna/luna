@@ -58,6 +58,8 @@ transport formats, please look [here](./protocol-architecture).
   - [`EnsoDigest`](#ensodigest)
   - [`FileSegment`](#filesegment)
   - [`ContentRoot`](#contentroot)
+  - [`LibraryEntry`](#libraryentry)
+  - [`EditionReference`](#editionreference)
 - [Connection Management](#connection-management)
   - [`session/initProtocolConnection`](#sessioninitprotocolconnection)
   - [`session/initBinaryConnection`](#sessioninitbinaryconnection)
@@ -90,8 +92,6 @@ transport formats, please look [here](./protocol-architecture).
   - [`file/checksum`](#filechecksum)
   - [`file/checksumBytes`](#filechecksumbytes)
   - [`file/event`](#fileevent)
-  - [`file/addRoot`](#fileaddroot)
-  - [`file/removeRoot`](#fileremoveroot)
   - [`file/rootAdded`](#filerootadded)
   - [`file/rootRemoved`](#filerootremoved)
 - [Text Editing Operations](#text-editing-operations)
@@ -147,13 +147,26 @@ transport formats, please look [here](./protocol-architecture).
   - [`io/standardErrorAppended`](#iostandarderrorappended)
   - [`io/feedStandardInput`](#iofeedstandardinput)
   - [`io/waitingForStandardInput`](#iowaitingforstandardinput)
-- [Errors](#errors)
+- [Library-Related Operations](#library-related-operations)
+  - [`editions/listAvailable`](#editionslistavailable)
+  - [`editions/resolve`](#editionsresolve)
+  - [`editions/getProjectSettings`](#editionsgetprojectsettings)
+  - [`editions/setProjectParentEdition`](#editionssetprojectparentedition)
+  - [`editions/setProjectLocalLibrariesPreference`](#editionssetprojectlocallibrariespreference)
+  - [`editions/listDefinedLibraries`](#editionslistdefinedlibraries)
+  - [`library/listLocal`](#librarylistlocal)
+  - [`library/create`](#librarycreate)
+  - [`library/getMetadata`](#librarygetmetadata)
+  - [`library/setMetadata`](#librarysetmetadata)
+  - [`library/publish`](#librarypublish)
+  - [`library/preinstall`](#librarypreinstall)
+- [Errors](#errors-74)
   - [`Error`](#error)
   - [`AccessDeniedError`](#accessdeniederror)
   - [`FileSystemError`](#filesystemerror)
   - [`ContentRootNotFoundError`](#contentrootnotfounderror)
   - [`FileNotFound`](#filenotfound)
-  - [`FileExists`](#fileexists-1)
+  - [`FileExists`](#fileexists)
   - [`OperationTimeoutError`](#operationtimeouterror)
   - [`NotDirectory`](#notdirectory)
   - [`NotFile`](#notfile)
@@ -179,6 +192,15 @@ transport formats, please look [here](./protocol-architecture).
   - [`ProjectNotFoundError`](#projectnotfounderror)
   - [`ModuleNameNotResolvedError`](#modulenamenotresolvederror)
   - [`SuggestionNotFoundError`](#suggestionnotfounderror)
+  - [`EditionNotFoundError`](#editionnotfounderror)
+  - [`LibraryAlreadyExists`](#libraryalreadyexists)
+  - [`LibraryRepositoryAuthenticationError`](#libraryrepositoryauthenticationerror)
+  - [`LibraryPublishError`](#librarypublisherror)
+  - [`LibraryUploadError`](#libraryuploaderror)
+  - [`LibraryDownloadError`](#librarydownloaderror)
+  - [`LocalLibraryNotFound`](#locallibrarynotfound)
+  - [`LibraryNotResolved`](#librarynotresolved)
+  - [`InvalidLibraryName`](#invalidlibraryname)
 
 <!-- /MarkdownTOC -->
 
@@ -401,6 +423,8 @@ interface SuggestionEntryScope {
 
 // A type of suggestion entries.
 type SuggestionEntry =
+  // A module
+  | SuggestionEntryModule
   // A value constructor
   | SuggestionEntryAtom
   // A method defined on a type
@@ -410,41 +434,104 @@ type SuggestionEntry =
   // A local value
   | SuggestionEntryLocal;
 
-interface SuggestionEntryAtom {
-  externalId?: UUID;
-  name: string;
+interface SuggestionEntryModule {
+  /** The fully qualified module name. */
   module: string;
-  arguments: SuggestionEntryArgument[];
-  returnType: string;
+
+  /** The documentation string. */
   documentation?: string;
+
+  /** The fully qualified module name re-exporting this module. */
+  reexport?: string;
+}
+
+interface SuggestionEntryAtom {
+  /** The external id. */
+  externalId?: UUID;
+
+  /** The atom name. */
+  name: string;
+
+  /** The module name where the atom is defined. */
+  module: string;
+
+  /** The list of arguments. */
+  arguments: SuggestionEntryArgument[];
+
+  /** The type of an atom. */
+  returnType: string;
+
+  /** The documentation string. */
+  documentation?: string;
+
+  /** The fully qualified module name re-exporting this module. */
+  reexport?: string;
+
   documentationHtml?: string;
 }
 
 interface SuggestionEntryMethod {
+  /** The external id. */
   externalId?: UUID;
+
+  /** The method name. */
   name: string;
+
+  /** The module name where this method is defined. */
   module: string;
+
+  /** The list of arguments. */
   arguments: SuggestionEntryArgument[];
+
+  /** The method self type. */
   selfType: string;
+
+  /** The return type of this method. */
   returnType: string;
+
+  /** The documentation string. */
   documentation?: string;
+
+  /** The fully qualified module name re-exporting this module. */
+  reexport?: string;
+
   documentationHtml?: string;
 }
 
 interface SuggestionEntryFunction {
+  /** The external id. */
   externalId?: UUID;
+
+  /** The function name. */
   name: string;
+
+  /** The module name where this function is defined. */
   module: string;
+
+  /** The list of arguments. */
   arguments: SuggestionEntryArgument[];
+
+  /** The function return type. */
   returnType: string;
+
+  /** The scope where the function is defined. */
   scope: SuggestionEntryScope;
 }
 
 interface SuggestionEntryLocal {
+  /** The external id. */
   externalId?: UUID;
+
+  /** The name of a value. */
   name: string;
+
+  /** The module where this value is defined. */
   module: string;
+
+  /** The type of a value. */
   returnType: string;
+
+  /** The scope where the value is defined. */
   scope: SuggestionEntryScope;
 }
 ```
@@ -457,7 +544,7 @@ The suggestion entry type that is used as a filter in search requests.
 
 ```typescript
 // The kind of a suggestion.
-type SuggestionEntryType = Atom | Method | Function | Local;
+type SuggestionEntryType = Module | Atom | Method | Function | Local;
 ```
 
 ### `SuggestionId`
@@ -678,6 +765,11 @@ interface Modify {
    * The scope to update.
    */
   scope?: FieldUpdate<SuggestionEntryScope>;
+
+  /**
+   * The reexport field to update.
+   */
+  reexport?: FieldUpdate<String>;
 }
 ```
 
@@ -1209,6 +1301,62 @@ interface Library {
 interface Custom {
   // A unique identifier for the content root.
   id: UUID;
+}
+```
+
+### `LibraryEntry`
+
+Represents a library available in a resolved edition.
+
+```typescript
+interface LibraryEntry {
+  namespace: String;
+  name: String;
+  version: LibraryVersion;
+}
+```
+
+```typescript
+type LibraryVersion = LocalLibraryVersion | PublishedLibraryVersion;
+
+/** A library version that references a version of the library published in some
+ * repository.
+ */
+interface PublishedLibraryVersion {
+  // A semver-compliant version of the library.
+  version: String;
+
+  // URL to the repository that this library will be downloaded from.
+  repositoryUrl: String;
+}
+
+// A library version that references a locally editable version of the library.
+interface LocalLibraryVersion {}
+```
+
+The local libraries do not have metadata associated with them by default, as for
+the published libraries, the canonical way to access the metadata is to download
+the manifest, as described in the
+[library repository structure](../libraries/repositories.md#libraries-repository).
+So the manifest URL can be found by combining the repository URL and library
+name and version: `<repositoryUrl>/<namespace>/<name>/<version>/manifest.yaml`.
+
+### `EditionReference`
+
+A reference to a specific edition.
+
+Currently, it can either reference an edition by its name, or reference the
+edition associated with the currently open project.
+
+```typescript
+type EditionReference = NamedEdition | CurrentProjectEdition;
+
+// The edition associated with the current project, with all of its overrides.
+interface CurrentProjectEdition {}
+
+// An edition stored under a given name.
+interface NamedEdition {
+  editionName: String;
 }
 ```
 
@@ -3918,6 +4066,435 @@ standard input.
 null;
 ```
 
+## Library-Related Operations
+
+The library-related operations provide the Language Server with capabilities to
+check and modify project's edition settings, list editions published in a given
+edition, create local library projects which can be imported in the currently
+opened project and publish them.
+
+### `editions/listAvailable`
+
+Lists editions available on the system.
+
+Moreover, if `update` is set to `true`, it will download any new editions from
+the repositories and include them in the result as well.
+
+> Currently, if `update` was `true` but some downloads failed, the endpoint will
+> still return a success, just containing the editions that were already
+> available. In the future it should emit warnings using proper notification
+> channels.
+
+#### Parameters
+
+```typescript
+{
+  update: Boolean;
+}
+```
+
+#### Result
+
+```typescript
+{
+  editionNames: [String];
+}
+```
+
+### `editions/resolve`
+
+Resolves settings implied by the edition.
+
+> Currently, it only resolves the engine version, as only it is needed, but
+> other settings may be added if necessary.
+
+#### Parameters
+
+```typescript
+{
+  edition: EditionReference;
+}
+```
+
+#### Result
+
+```typescript
+{
+  engineVersion: String;
+}
+```
+
+#### Errors
+
+- [`EditionNotFoundError`](#editionnotfounderror) indicates that the requested
+  edition, or some edition referenced in the ancestors of the edition being
+  resolved, could not be found.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `editions/getProjectSettings`
+
+Returns the currently set edition-related settings of the project.
+
+Currently, it only returns the parent edition and local library preference. Once
+more advanced edition settings are to be supported in the IDE, this endpoint
+will be extended.
+
+#### Parameters
+
+```typescript
+null;
+```
+
+#### Result
+
+```typescript
+{
+    parentEdition?: String;
+    preferLocalLibraries: Boolean;
+}
+```
+
+The `parentEdition` may be missing if it is not set. It is possible to manually
+edit the `pacakge.yaml` and generate a valid edition config that does not
+specify a parent edition.
+
+### `editions/setProjectParentEdition`
+
+Sets the parent edition of the project to a specific edition.
+
+This change may even change the version of the engine associated with the
+project, so for the changes to take effect, the language server may need to be
+restarted. The endpoint only modifies the `pacakge.yaml` file, which is
+preloaded in the Language Server, so it is IDE's responsibility to re-open the
+project.
+
+It returns an optional field `needsRestart` which specifies whether the Language
+Server needs to be restarted for the change to take effect. If the field is
+missing, it should be treated as set to `false`. In the current version it is
+always set to `true`.
+
+#### Parameters
+
+```typescript
+{
+  newEditionName: String;
+}
+```
+
+#### Result
+
+```typescript
+{
+    needsRestart?: Boolean;
+}
+```
+
+#### Errors
+
+- [`EditionNotFoundError`](#editionnotfounderror) indicates that the requested
+  edition could not be found.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `editions/setProjectLocalLibrariesPreference`
+
+Sets the `prefer-local-libraries` setting of the project, which specifies if
+libraries from `ENSO_HOME/libraries` should take precedence over the ones
+defined in the edition.
+
+> This may change which libraries should be loaded in the project. In the future
+> it may be possible that this reload could happen dynamically, however
+> currently, the language server needs to be restarted (in the same way as for
+> `editions/setProjectParentEdition`) for the changes to take effect.
+
+It returns an optional field `needsRestart` which specifies whether the Language
+Server needs to be restarted for the change to take effect. If the field is
+missing, it should be treated as set to `false`. In the current version it is
+always set to `true`.
+
+#### Parameters
+
+```typescript
+{
+  preferLocalLibraries: Boolean;
+}
+```
+
+#### Result
+
+```typescript
+{
+    needsRestart?: Boolean;
+}
+```
+
+#### Errors
+
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `editions/listDefinedLibraries`
+
+Lists all libraries defined in an edition (or all of its parents).
+
+This can be used to display which libraries can be downloaded / added to the
+project.
+
+This does not include local libraries not defined explicitly in the project's
+edition, even if they can be resolved as per `prefer-local-libraries` setting.
+To get local libraries that are not directly referenced in the edition, use
+[`library/listLocal`](#librarylistlocal) instead.
+
+#### Parameters
+
+```typescript
+{
+  edition: EditionReference;
+}
+```
+
+#### Result
+
+```typescript
+{
+  availableLibraries: [LibraryEntry];
+}
+```
+
+#### Errors
+
+- [`EditionNotFoundError`](#editionnotfounderror) indicates that the requested
+  edition, or an edition referenced in one of its parents, could not be found.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `library/listLocal`
+
+Lists all local libraries available in the system.
+
+#### Parameters
+
+```typescript
+null;
+```
+
+#### Result
+
+```typescript
+{
+  localLibraries: [LibraryEntry];
+}
+```
+
+#### Errors
+
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `library/create`
+
+Creates a new project package, but placed not in the projects directory, but in
+the local libraries directory, so that other projects (including the current
+one) that can resolve local libraries will be able to import it.
+
+The created library package inherits all edition settings from the current
+project.
+
+The endpoint just returns an empty message at success. Once this operation
+finishes, the IDE can add the import `import <namespace>.<name>` to the open
+file which will import the newly created library (the IDE must also ensure that
+`prefer-local-libraries` is set to `true` or otherwise, it must add a proper
+override to its own edition file to see this local library). Once the import is
+added, the library will be loaded and its content root will be sent in a
+[`file/rootAdded`](#filerootadded) notification.
+
+#### Parameters
+
+```typescript
+{
+  namespace: String;
+  name: String;
+  authors: [String];
+  maintainers: [String];
+  license: String;
+}
+```
+
+#### Result
+
+```typescript
+null;
+```
+
+#### Errors
+
+- [`InvalidLibraryName`](#invalidlibraryname) to signal that the selected
+  library name is not valid.
+- [`LibraryAlreadyExists`](#libraryalreadyexists) to signal that a library with
+  the given namespace and name already exists.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `library/getMetadata`
+
+Gets metadata associated with a local library that will be used for publishing.
+
+All returned fields are optional, as they may be missing.
+
+#### Parameters
+
+```typescript
+{
+  namespace: String;
+  name: String;
+}
+```
+
+#### Results
+
+```typescript
+{
+  description?: String;
+  tagLine?: String;
+}
+```
+
+#### Errors
+
+- [`LocalLibraryNotFound`](#locallibrarynotfound) to signal that a local library
+  with the given name does not exist on the local libraries path.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `library/setMetadata`
+
+Sets metadata associated with a local library that will be used for publishing.
+
+All metadata fields are optional. If a field is not set in the parameters, it
+will be removed from the metadata (if it was present before).
+
+#### Parameters
+
+```typescript
+{
+  namespace: String;
+  name: String;
+  description?: String;
+  tagLine?: String;
+}
+```
+
+#### Results
+
+```typescript
+null;
+```
+
+#### Errors
+
+- [`LocalLibraryNotFound`](#locallibrarynotfound) to signal that a local library
+  with the given name does not exist on the local libraries path.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `library/publish`
+
+Publishes a library located in the local libraries directory to the main Enso
+library repository.
+
+If `bumpVersionAfterPublish` is set to true, after publishing the library, its
+version is bumped automatically, so that future publications will not clash
+versions. This is a temporary solution and in the longer-term it should be
+replaced with separate settings allowing to arbitrarily modify the library
+version from the IDE.
+
+The `uploadUrl` is the URL of the library repository that accepts library
+uploads.
+
+The metadata for publishing the library can be set with
+[`library/setMetadata`](#librarysetmetadata). If it was not set, the publish
+operation will still proceed, but that metadata will be missing.
+
+#### Parameters
+
+```typescript
+{
+  namespace: String;
+  name: String;
+  authToken: String;
+  uploadUrl: String;
+
+  bumpVersionAfterPublish?: Boolean;
+}
+```
+
+#### Result
+
+```typescript
+null;
+```
+
+#### Errors
+
+- [`LocalLibraryNotFound`](#locallibrarynotfound) to signal that a local library
+  with the given name does not exist on the local libraries path.
+- [`LibraryPublishError`](#librarypublisherror) to signal that the server did
+  not accept to publish the library (for example because a library with the same
+  version already exists).
+- [`LibraryRepositoryAuthenticationError`](#libraryrepositoryauthenticationerror)
+  to signal an authentication failure.
+- [`LibraryUploadError`](#libraryuploaderror) to signal that the upload
+  operation has failed, for network-related reasons.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
+### `library/preinstall`
+
+Ensures that the requested library and all of its (transitive) dependencies, at
+versions as resolved by the current project's edition, are downloaded.
+
+Once this operation completes, the library import can be added to the project
+and it is guaranteed that (unless there were unexpected changes to the system,
+like files being manually deleted) no further downloads will be needed, so that
+the import should load quickly.
+
+This can be used by the IDE to predownload the library that is about to be added
+to a project, to avoid freezing the compiler for the time the dependencies are
+being downloaded.
+
+While this operation is in progress, multiple series of `task/*` notifications
+may be sent, indicating progress of particular components being downloaded and
+installed.
+
+#### Parameters
+
+```typescript
+{
+  namespace: String;
+  name: String;
+}
+```
+
+#### Result
+
+```typescript
+null;
+```
+
+#### Errors
+
+- [`LibraryNotResolved`](#librarynotresolved) to signal that the requested
+  library or one of its dependencies could not be resolved.
+- [`LibraryDownloadError`](#librarydownloaderror) to signal that the download
+  operation has failed, for network-related reasons, or because the library was
+  missing in the repository. The error includes the name and version of the
+  library that failed to download - as when preinstalling a specific library the
+  failure may be tied not to that library itself but also one of its
+  dependencies.
+- [`FileSystemError`](#filesystemerror) to signal a generic, unrecoverable
+  file-system error.
+
 ## Errors
 
 The language server component also has its own set of errors. This section is
@@ -4317,5 +4894,130 @@ Signals that the requested suggestion was not found.
 "error" : {
   "code" : 7004,
   "message" : "Requested suggestion was not found"
+}
+```
+
+### `EditionNotFoundError`
+
+Signals that an edition could not be found.
+
+Its payload includes the name of the edition that could not be found.
+
+```typescript
+"error" : {
+  "code" : 8001,
+  "message" : "Edition [<name>] could not be found.",
+  "payload" : {
+    "editionName": "<name>"
+  }
+}
+```
+
+### `LibraryAlreadyExists`
+
+Signals that a local library with the specified namespace and name combination
+already exists, so it cannot be created again.
+
+```typescript
+"error" : {
+  "code" : 8002,
+  "message" : "Library [<namespace>.<name>] already exists."
+}
+```
+
+### `LibraryRepositoryAuthenticationError`
+
+Signals that authentication to the library repository was declined.
+
+```typescript
+"error" : {
+  "code" : 8003,
+  "message" : "Authentication failed: [message]"
+}
+```
+
+### `LibraryPublishError`
+
+Signals that a request to the library repository failed.
+
+```typescript
+"error" : {
+  "code" : 8004,
+  "message" : "Could not publish the library: [message]"
+}
+```
+
+### `LibraryUploadError`
+
+Signals that uploading the library failed for network-related reasons.
+
+```typescript
+"error" : {
+  "code" : 8005,
+  "message" : "Could not upload the library: [message]"
+}
+```
+
+### `LibraryDownloadError`
+
+Signals that downloading the library failed for network-related reasons or that
+it was not available in the repository.
+
+```typescript
+"error" : {
+  "code" : 8006,
+  "message" : "Could not download the library: [message]",
+  "payload" : {
+    "namespace" : "<namespace>",
+    "name" : "<name>",
+    "version": "<version>"
+  }
+}
+```
+
+### `LocalLibraryNotFound`
+
+Signals that a local library with the specified namespace and name combination
+was not found on the local libraries path.
+
+```typescript
+"error" : {
+  "code" : 8007,
+  "message" : "Local library [<namespace>.<name>] has not been found."
+}
+```
+
+### `LibraryNotResolved`
+
+Signals that a library could not be resolved - it was not defined in the edition
+and the settings did not allow to resolve local libraries or it did not exist
+there either.
+
+```typescript
+"error" : {
+  "code" : 8008,
+  "message" : "Could not resolve [<namespace>.<name>].",
+  "payload" : {
+    "namespace" : "<namespace>",
+    "name" : "<name>"
+  }
+}
+```
+
+### `InvalidLibraryName`
+
+Signals that the chosen library name is invalid.
+
+It contains a suggestion of a similar name that is valid.
+
+For example for `FooBar` it will suggest `Foo_Bar`.
+
+```typescript
+"error" : {
+  "code" : 8009,
+  "message" : "[<name>] is not a valid name: <reason>.",
+  "payload" : {
+    "suggestedName" : "<fixed-name>"
+  }
 }
 ```

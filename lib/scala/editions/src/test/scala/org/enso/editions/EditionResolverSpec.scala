@@ -16,28 +16,32 @@ class EditionResolverSpec
     with Inside
     with OptionValues {
   object FakeEditionProvider extends EditionProvider {
-    val mainRepo = Repository.make("main", "https://example.com/main").get
+    val mainRepo = Repository("main", "https://example.com/main")
     val editions: Map[String, Editions.RawEdition] = Map(
       "2021.0" -> Editions.Raw.Edition(
         parent        = None,
-        engineVersion = Some(SemVerEnsoVersion(SemVer(1, 2, 3))),
+        engineVersion = Some(SemVer(1, 2, 3)),
         repositories = Map(
           "main" -> mainRepo
         ),
         libraries = Map(
-          "Standard.Base" -> Editions.Raw
-            .PublishedLibrary("Standard.Base", SemVer(1, 2, 3), "main")
+          LibraryName("Standard", "Base") -> Editions.Raw
+            .PublishedLibrary(
+              LibraryName("Standard", "Base"),
+              SemVer(1, 2, 3),
+              "main"
+            )
         )
       ),
       "cycleA" -> Editions.Raw.Edition(
         parent        = Some("cycleB"),
-        engineVersion = Some(SemVerEnsoVersion(SemVer(1, 2, 3))),
+        engineVersion = Some(SemVer(1, 2, 3)),
         repositories  = Map(),
         libraries     = Map()
       ),
       "cycleB" -> Editions.Raw.Edition(
         parent        = Some("cycleA"),
-        engineVersion = Some(SemVerEnsoVersion(SemVer(1, 2, 3))),
+        engineVersion = Some(SemVer(1, 2, 3)),
         repositories  = Map(),
         libraries     = Map()
       )
@@ -56,15 +60,17 @@ class EditionResolverSpec
 
   "EditionResolver" should {
     "resolve a simple edition" in {
-      val repo = Repository.make("foo", "http://example.com").get
+      val repo = Repository("foo", "http://example.com")
       val edition = Editions.Raw.Edition(
         parent        = None,
-        engineVersion = Some(SemVerEnsoVersion(SemVer(1, 2, 3))),
+        engineVersion = Some(SemVer(1, 2, 3)),
         repositories  = Map("foo" -> repo),
         libraries = Map(
-          "bar.baz" -> Editions.Raw.LocalLibrary("bar.baz"),
-          "foo.bar" -> Editions.Raw
-            .PublishedLibrary("foo.bar", SemVer(1, 2, 3), "foo")
+          LibraryName("bar", "baz") -> Editions.Raw.LocalLibrary(
+            LibraryName("bar", "baz")
+          ),
+          LibraryName("foo", "bar") -> Editions.Raw
+            .PublishedLibrary(LibraryName("foo", "bar"), SemVer(1, 2, 3), "foo")
         )
       )
 
@@ -73,33 +79,47 @@ class EditionResolverSpec
         resolved.parent should be(empty)
         resolved.repositories shouldEqual edition.repositories
         resolved.libraries should have size 2
-        resolved.libraries("bar.baz") shouldEqual Editions.Resolved
-          .LocalLibrary("bar.baz")
-        resolved.libraries("foo.bar") shouldEqual Editions.Resolved
-          .PublishedLibrary("foo.bar", SemVer(1, 2, 3), repo)
+        resolved.libraries(
+          LibraryName("bar", "baz")
+        ) shouldEqual Editions.Resolved
+          .LocalLibrary(LibraryName("bar", "baz"))
+        resolved.libraries(
+          LibraryName("foo", "bar")
+        ) shouldEqual Editions.Resolved
+          .PublishedLibrary(LibraryName("foo", "bar"), SemVer(1, 2, 3), repo)
       }
     }
 
     "resolve a nested edition" in {
       val edition = Editions.Raw.Edition(
         parent        = Some("2021.0"),
-        engineVersion = Some(SemVerEnsoVersion(SemVer(1, 2, 3))),
+        engineVersion = Some(SemVer(1, 2, 3)),
         repositories  = Map(),
         libraries = Map(
-          "bar.baz" -> Editions.Raw.LocalLibrary("bar.baz"),
-          "foo.bar" -> Editions.Raw
-            .PublishedLibrary("foo.bar", SemVer(1, 2, 3), "main")
+          LibraryName("bar", "baz") -> Editions.Raw.LocalLibrary(
+            LibraryName("bar", "baz")
+          ),
+          LibraryName("foo", "bar") -> Editions.Raw
+            .PublishedLibrary(
+              LibraryName("foo", "bar"),
+              SemVer(1, 2, 3),
+              "main"
+            )
         )
       )
 
       inside(resolver.resolve(edition)) { case Right(resolved) =>
         resolved.parent should be(defined)
         resolved.libraries should have size 2
-        resolved.libraries("bar.baz") shouldEqual Editions.Resolved
-          .LocalLibrary("bar.baz")
-        resolved.libraries("foo.bar") shouldEqual Editions.Resolved
+        resolved.libraries(
+          LibraryName("bar", "baz")
+        ) shouldEqual Editions.Resolved
+          .LocalLibrary(LibraryName("bar", "baz"))
+        resolved.libraries(
+          LibraryName("foo", "bar")
+        ) shouldEqual Editions.Resolved
           .PublishedLibrary(
-            "foo.bar",
+            LibraryName("foo", "bar"),
             SemVer(1, 2, 3),
             FakeEditionProvider.mainRepo
           )
@@ -107,7 +127,7 @@ class EditionResolverSpec
     }
 
     "correctly handle repository shadowing when resolving libraries" in {
-      val localRepo = Repository.make("main", "http://example.com/local").get
+      val localRepo = Repository("main", "http://example.com/local")
 
       localRepo should not equal FakeEditionProvider.mainRepo
 
@@ -116,24 +136,30 @@ class EditionResolverSpec
         engineVersion = None,
         repositories  = Map("main" -> localRepo),
         libraries = Map(
-          "foo.bar" -> Editions.Raw
-            .PublishedLibrary("foo.bar", SemVer(1, 2, 3), "main")
+          LibraryName("foo", "bar") -> Editions.Raw
+            .PublishedLibrary(
+              LibraryName("foo", "bar"),
+              SemVer(1, 2, 3),
+              "main"
+            )
         )
       )
 
       inside(resolver.resolve(edition)) { case Right(resolved) =>
         resolved.parent should be(defined)
         resolved.libraries should have size 1
-        resolved.libraries("foo.bar") shouldEqual
+        resolved.libraries(LibraryName("foo", "bar")) shouldEqual
         Editions.Resolved.PublishedLibrary(
-          "foo.bar",
+          LibraryName("foo", "bar"),
           SemVer(1, 2, 3),
           localRepo
         )
 
-        resolved.parent.value.libraries("Standard.Base") shouldEqual
+        resolved.parent.value.libraries(
+          LibraryName("Standard", "Base")
+        ) shouldEqual
         Editions.Resolved.PublishedLibrary(
-          "Standard.Base",
+          LibraryName("Standard", "Base"),
           SemVer(1, 2, 3),
           FakeEditionProvider.mainRepo
         )
@@ -143,7 +169,7 @@ class EditionResolverSpec
     "avoid cycles in the resolution" in {
       val edition = Editions.Raw.Edition(
         parent        = Some("cycleA"),
-        engineVersion = Some(SemVerEnsoVersion(SemVer(1, 2, 3))),
+        engineVersion = Some(SemVer(1, 2, 3)),
         repositories  = Map(),
         libraries     = Map()
       )

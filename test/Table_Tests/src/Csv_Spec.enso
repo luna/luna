@@ -60,3 +60,104 @@ spec =
             expected = Json.from_pairs [["columns", [c_1, c_2, c_3, c_4, c_5, c_6]]]
             varied_column.to_json.should_equal expected
 
+        Test.specify "should handle duplicated columns" <|
+            csv = """
+                name,x,y,x,y
+                foo,10,20,30,20
+            t = Table.from_csv csv
+            t.columns.map .name . should_equal ['name', 'x', 'y', 'x 1', 'y 1']
+
+    Test.group 'Writing' <|
+        Test.specify 'should properly serialize simple tables' <|
+            varied_column = (Enso_Project.data / "varied_column.csv") . read_csv has_header=False
+            res = varied_column.to_csv
+            exp = '''
+                C0,C1,C2,C3,C4,C5
+                2005-02-25,2005-02-25,1,1,1.0,1
+                2005-02-28,2005-02-28,2,2,2.0,2
+                4,2005-03-01,3,3,3.0,3
+                2005-03-02,,4,4,4.0,4
+                ,2005-03-03,5,5,5.0,5
+                2005-03-04,2005-03-04,,6,6.25,6.25
+                2005-03-07,2005-03-07,7,7,7.0,7
+                2005-03-08,2005-03-08,8,8,8.0,osiem\n
+            res.should_equal exp
+
+        Test.specify 'should properly handle quoting of records and allow specifying separators and newlines' <|
+            c1 = ['name', ['Robert");DROP TABLE Students;--', 'This;Name;;Is""Strange', 'Marcin,,']]
+            c2 = ['grade', [10, 20, 'hello;world']]
+            t = Table.new [c1, c2]
+
+            expected_wrong_newline = """
+                name;grade
+                "Robert"");DROP TABLE Students;--";10
+                "This;Name;;Is""""Strange";20
+                Marcin,,;"hello;world"
+
+            expected = expected_wrong_newline.split Split_Kind.Lines . join '\r\n'
+            res = t.to_csv separator=';' line_ending=Line_Ending_Style.Windows
+            res.should_equal expected+'\r\n'
+
+        Test.specify 'should allow forced quoting of records'
+            c1 = ['name', ['Robert");DROP TABLE Students;--', 'This;Name;;Is""Strange', 'Marcin,,']]
+            c2 = ['grade', [10, 20, 'hello;world']]
+            t = Table.new [c1, c2]
+
+            expected = """
+                "name","grade"
+                "Robert"");DROP TABLE Students;--","10"
+                "This;Name;;Is""""Strange","20"
+                "Marcin,,","hello;world"
+
+            res = t.to_csv always_quote=True
+            res.should_equal expected+'\n'
+
+
+        Test.specify 'should write CSV to a file' <|
+            varied_column = (Enso_Project.data / "varied_column.csv") . read_csv has_header=False
+            out = Enso_Project.data / 'out.csv'
+            out.delete_if_exists
+            varied_column.write_csv out
+            exp = '''
+                C0,C1,C2,C3,C4,C5
+                2005-02-25,2005-02-25,1,1,1.0,1
+                2005-02-28,2005-02-28,2,2,2.0,2
+                4,2005-03-01,3,3,3.0,3
+                2005-03-02,,4,4,4.0,4
+                ,2005-03-03,5,5,5.0,5
+                2005-03-04,2005-03-04,,6,6.25,6.25
+                2005-03-07,2005-03-07,7,7,7.0,7
+                2005-03-08,2005-03-08,8,8,8.0,osiem\n
+            out.read.should_equal exp
+            out.delete_if_exists
+
+        Test.specify 'should write CSV to multiple files, when row limit specified' <|
+            varied_column = (Enso_Project.data / "varied_column.csv") . read_csv has_header=False
+            out = Enso_Project.data / 'out.csv'
+            out_1 = Enso_Project.data / 'out_1.csv'
+            out_2 = Enso_Project.data / 'out_2.csv'
+            out_3 = Enso_Project.data / 'out_3.csv'
+            out_1.delete_if_exists
+            out_2.delete_if_exists
+            out_3.delete_if_exists
+            varied_column.write_csv out max_rows_per_file=3
+            exp_1 = '''
+                C0,C1,C2,C3,C4,C5
+                2005-02-25,2005-02-25,1,1,1.0,1
+                2005-02-28,2005-02-28,2,2,2.0,2
+                4,2005-03-01,3,3,3.0,3\n
+            exp_2 = '''
+                C0,C1,C2,C3,C4,C5
+                2005-03-02,,4,4,4.0,4
+                ,2005-03-03,5,5,5.0,5
+                2005-03-04,2005-03-04,,6,6.25,6.25\n
+            exp_3 = '''
+                C0,C1,C2,C3,C4,C5
+                2005-03-07,2005-03-07,7,7,7.0,7
+                2005-03-08,2005-03-08,8,8,8.0,osiem\n
+            out_1.read.should_equal exp_1
+            out_2.read.should_equal exp_2
+            out_3.read.should_equal exp_3
+            out_1.delete_if_exists
+            out_2.delete_if_exists
+            out_3.delete_if_exists

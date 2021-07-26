@@ -1,5 +1,74 @@
 # Enso Next
 
+# Enso 0.2.16 (2021-07-23)
+
+## Interpreter/Runtime
+
+- Added support for the `ALIAS` tag in documentation blocks for use by the
+  searcher ([#1896](https://github.com/enso-org/enso/pull/1896)).
+
+## Tooling
+
+- Implemented a basic library downloader
+  ([#1885](https://github.com/enso-org/enso/pull/1885)), allowing the
+  downloading of missing libraries.
+- Implemented a basic library uploader
+  ([#1898](https://github.com/enso-org/enso/pull/1898)). It implements the
+  `library/publish` endpoint of the Language Server and adds a `publish-library`
+  subcommand to the Launcher.
+
+## Libraries
+
+- Added support for reading XLS and XLSX spreadsheets
+  ([#1879](https://github.com/enso-org/enso/pull/1879)).
+- Added support for serializing tables into CSV files.
+  ([#1894](https://github.com/enso-org/enso/pull/1894)).
+
+## Known Issues
+
+- This is a beta release, so please see the
+  [issue tracker](https://github.com/enso-org/enso/issues?q=is%3Aissue+is%3Aopen+created%3A%3C2021-07-23)
+  for issues opened before the release date.
+
+# Enso 0.2.15 (2021-07-19)
+
+## Tooling
+
+- Implement parts of the new Language Server API related to library support
+  ([#1875](https://github.com/enso-org/enso/pull/1875)). Parts of the API are
+  still mocked internally, but they are supported externally for testing
+  purposes.
+
+## Known Issues
+
+- This is a beta release, so please see the
+  [issue tracker](https://github.com/enso-org/enso/issues?q=is%3Aissue+is%3Aopen+created%3A%3C2021-07-19)
+  for issues opened before the release date.
+
+# Enso 0.2.14 (2021-07-15)
+
+## Interpreter/Runtime
+
+- Ensure that the module used by a visualization is preloaded when the
+  visualization is being attached
+  ([#1857](https://github.com/enso-org/enso/pull/1857)).
+- Fix an issue with the `HostClassLoader` getting into a broken state
+  ([#1867](https://github.com/enso-org/enso/pull/1867)).
+
+## Tooling
+
+- Implemented an HTTP endpoint returning the time that the language server has
+  spent idle ([#1847](https://github.com/enso-org/enso/pull/1847)).
+- Fix a bug where the `project/list` endpoint would fail if any of the projects
+  referenced an edition that does not exist anymore
+  ([#1858](https://github.com/enso-org/enso/pull/1858)).
+
+## Known Issues
+
+- This is a beta release, so please see the
+  [issue tracker](https://github.com/enso-org/enso/issues?q=is%3Aissue+is%3Aopen+created%3A%3C2021-07-15)
+  for issues opened before the release date.
+
 # Enso 0.2.13 (2021-07-09)
 
 ## Interpreter/Runtime

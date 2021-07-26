@@ -1,8 +1,8 @@
 package org.enso.launcher.releases
 
 import java.nio.file.Path
-
 import com.typesafe.scalalogging.Logger
+import org.enso.downloader.http.URIBuilder
 import org.enso.launcher.distribution.DefaultManagers
 import org.enso.launcher.releases.fallback.SimpleReleaseProviderWithFallback
 import org.enso.launcher.releases.fallback.staticwebsite.StaticWebsiteFallbackReleaseProvider
@@ -10,7 +10,6 @@ import org.enso.launcher.releases.launcher.{
   LauncherRelease,
   LauncherReleaseProvider
 }
-import org.enso.runtimeversionmanager.http.URIBuilder
 import org.enso.runtimeversionmanager.releases.engine.EngineRepository
 import org.enso.runtimeversionmanager.releases.testing.FakeReleaseProvider
 import org.enso.runtimeversionmanager.releases.{

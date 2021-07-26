@@ -20,3 +20,15 @@ case class LanguageHome(languageHome: Path) {
   def libraries: Path =
     rootPath.resolve(DistributionManager.LIBRARIES_DIRECTORY)
 }
+
+object LanguageHome {
+
+  /** Finds the [[LanguageHome]] based on the path of the runner JAR.
+    *
+    * Only guaranteed to work properly if used in a component that is started by the `engine-runner`.
+    */
+  def detectFromExecutableLocation(environment: Environment): LanguageHome = {
+    val homePath = environment.getPathToRunningExecutable.getParent
+    LanguageHome(homePath)
+  }
+}

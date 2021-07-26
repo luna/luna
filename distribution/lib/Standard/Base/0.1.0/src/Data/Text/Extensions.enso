@@ -1,6 +1,7 @@
 from Standard.Base import all
 from Standard.Builtins import Text, Prim_Text_Helpers
 
+import Standard.Base.Data.Text.Line_Ending_Style
 import Standard.Base.Data.Text.Split_Kind
 import Standard.Base.Data.Locale
 import Standard.Base.Meta
@@ -8,6 +9,7 @@ import Standard.Base.Meta
 from Standard.Builtins export Text
 
 export Standard.Base.Data.Text.Split_Kind
+export Standard.Base.Data.Text.Line_Ending_Style
 
 polyglot java import com.ibm.icu.lang.UCharacter
 polyglot java import com.ibm.icu.text.BreakIterator

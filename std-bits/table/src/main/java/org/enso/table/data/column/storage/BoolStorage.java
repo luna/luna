@@ -2,6 +2,8 @@ package org.enso.table.data.column.storage;
 
 import java.util.BitSet;
 import java.util.Comparator;
+import java.util.function.Function;
+
 import org.enso.table.data.column.operation.map.MapOpStorage;
 import org.enso.table.data.column.operation.map.MapOperation;
 import org.enso.table.data.column.operation.map.UnaryMapOperation;
@@ -315,5 +317,10 @@ public class BoolStorage extends Storage {
         isMissing.get(offset, offset + limit),
         newSize,
         negated);
+  }
+
+  @Override
+  public String getPresentCsvString(int index, Function<Object, String> toCsvString) {
+    return getItem(index) ? "True" : "False";
   }
 }

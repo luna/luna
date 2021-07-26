@@ -871,6 +871,7 @@ class DocParserTests extends AnyFlatSpec with Matchers {
 
   """   DEPRECATED das sfa asf
     |REMOVED fdsdf
+    |ALIAS Convert From
     |Construct and manage a graphical user interface for your iOS or
     |tvOS app.
     |
@@ -881,7 +882,8 @@ class DocParserTests extends AnyFlatSpec with Matchers {
     .replaceAll(System.lineSeparator(), "\n") ?= Doc(
     Tags(
       Tags.Tag(3, Tags.Tag.Type.Deprecated, " das sfa asf"),
-      Tags.Tag(0, Tags.Tag.Type.Removed, " fdsdf")
+      Tags.Tag(0, Tags.Tag.Type.Removed, " fdsdf"),
+      Tags.Tag(0, Tags.Tag.Type.Alias, " Convert From")
     ),
     Synopsis(
       Section.Raw(

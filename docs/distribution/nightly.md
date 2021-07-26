@@ -54,12 +54,19 @@ differentiate between builds from a single day.
 For example, if `build.sbt` specifies the version to be `1.2.3` or
 `1.2.3-SNAPSHOT`, the nightly build based off of that version, triggered on 1st
 of February 2021 will result in version `1.2.3-SNAPSHOT.2021-02-01`. If a
-subsequent build based off of the same version is triggered on the same day it
-will be `1.2.3-SNAPSHOT.2021-02-01.1` etc.
+subsequent nightly build is triggered on the same day it will be
+`1.2.3-SNAPSHOT.2021-02-01.1` etc.
 
 Only the 3 most recent nightly builds are kept in the repository, any older
 builds are removed from the releases page and their corresponding tags are also
 removed.
+
+As each release has a default edition associated with it, so do the nightlies.
+For the first nightly released on a given date, the edition associated with it
+will be named `nightly-2021-02-01`. For subsequent nightly releases on the same
+day, a prefix will be added in the same way as with versions. So for example the
+second release on that day will be associated with edition
+`nightly-2021-02-01.1` etc.
 
 ## Release Notes
 

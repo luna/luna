@@ -1,7 +1,6 @@
 package org.enso.librarymanager.local
 
 import com.typesafe.scalalogging.Logger
-import org.enso.distribution.FileSystem.PathSyntax
 import org.enso.editions.LibraryName
 import org.enso.logger.masking.MaskedPath
 
@@ -31,7 +30,8 @@ class DefaultLocalLibraryProvider(searchPaths: List[Path])
     searchPaths: List[Path]
   ): Option[Path] = searchPaths match {
     case head :: tail =>
-      val potentialPath = head / libraryName.namespace / libraryName.name
+      val potentialPath =
+        LocalLibraryProvider.resolveLibraryPath(head, libraryName)
       if (Files.exists(potentialPath) && Files.isDirectory(potentialPath)) {
         logger.trace(
           s"Found a local $libraryName at " +

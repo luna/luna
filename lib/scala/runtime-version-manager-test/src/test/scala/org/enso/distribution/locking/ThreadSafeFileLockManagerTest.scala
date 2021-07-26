@@ -8,11 +8,8 @@ import org.enso.distribution.locking.{
 }
 
 import java.nio.file.Path
-import org.enso.runtimeversionmanager.test.{
-  NativeTestHelper,
-  TestSynchronizer,
-  WithTemporaryDirectory
-}
+import org.enso.runtimeversionmanager.test.{NativeTestHelper, TestSynchronizer}
+import org.enso.testkit.WithTemporaryDirectory
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.matchers.should.Matchers

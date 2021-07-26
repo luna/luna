@@ -5,8 +5,10 @@ import Standard.Test
 import project.Column_Spec
 import project.Csv_Spec
 import project.Table_Spec
+import project.Spreadsheet_Spec
 
 main = Test.Suite.run_main <|
     Column_Spec.spec
     Csv_Spec.spec
+    Spreadsheet_Spec.spec
     Table_Spec.spec

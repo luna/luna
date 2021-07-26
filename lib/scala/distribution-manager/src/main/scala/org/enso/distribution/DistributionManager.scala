@@ -1,6 +1,7 @@
 package org.enso.distribution
 
 import com.typesafe.scalalogging.Logger
+import org.enso.cli.OS
 import org.enso.distribution.FileSystem.PathSyntax
 import org.enso.logger.masking.{MaskedPath, ToLogString}
 

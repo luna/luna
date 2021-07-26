@@ -3,6 +3,7 @@ package org.enso.table.data.column.storage;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
+import java.util.function.Function;
 
 import org.enso.table.data.column.operation.map.MapOpStorage;
 import org.enso.table.data.column.operation.map.UnaryMapOperation;
@@ -153,5 +154,10 @@ public class ObjectStorage extends Storage {
     Object[] newData = new Object[newSize];
     System.arraycopy(data, offset, newData, 0, newSize);
     return new ObjectStorage(newData, newSize);
+  }
+
+  @Override
+  protected String getPresentCsvString(int index, Function<Object, String> toCsvString) {
+    return toCsvString.apply(getItem(index));
   }
 }

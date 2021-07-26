@@ -238,7 +238,7 @@ public class ExecutionService {
    * @param path the module path.
    * @param contents the sources to use for it.
    */
-  public void setModuleSources(File path, String contents, boolean isIndexed) {
+  public void setModuleSources(File path, String contents) {
     Optional<Module> module = context.getModuleForFile(path);
     if (module.isEmpty()) {
       module = context.createModuleForFile(path);
@@ -246,7 +246,6 @@ public class ExecutionService {
     module.ifPresent(
         mod -> {
           mod.setLiteralSource(contents);
-          mod.setIndexed(isIndexed);
         });
   }
 
@@ -258,16 +257,6 @@ public class ExecutionService {
   public void resetModuleSources(File path) {
     Optional<Module> module = context.getModuleForFile(path);
     module.ifPresent(Module::unsetLiteralSource);
-  }
-
-  /**
-   * Finds a module by qualified name.
-   *
-   * @param moduleName the qualified name of the module
-   * @return the relevant module, if exists
-   */
-  public Optional<Module> findModule(String moduleName) {
-    return context.findModule(moduleName);
   }
 
   /**

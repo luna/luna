@@ -1,29 +1,8 @@
 # Catch All
 * @iamrecursion @kustosz @radeusgd @4e6
 
-# Distribution
-/distribution/lib @iamrecursion @kustosz @radeusgd @4e6
-
-# Scala Libraries
-/lib/scala/cli @iamrecursion @radeusgd
-/lib/scala/core-definition @iamrecursion @kustosz
-/lib/scala/flexer @iamrecursion @kustosz
-/lib/scala/graph @iamrecursion @kustosz
-/lib/scala/interpreter-dsl @iamrecursion @kustosz
-/lib/scala/json-rpc-server @radeusgd @4e6
-/lib/scala/json-rpc-server-test @radeusgd @4e6
-/lib/scala/logger @kustosz @iamrecursion
-/lib/scala/parser-service @kustosz @iamrecursion
-/lib/scala/pkg @kustosz @4e6
-/lib/scala/project-manager @radeusgd @4e6
-/lib/scala/searcher @4e6 @radeusgd
-/lib/scala/syntax @iamrecursion @kustosz
-/lib/scala/testkit @4e6 @kustosz @iamrecursion @radeusgd
-/lib/scala/text-buffer @kustosz @4e6
-/lib/scala/version-output @iamrecursion @kustosz @radeusgd @4e6
-
 # Rust Libraries
-/lib/rust/ @iamrecursion @wdanilo @radeusgd
+/lib/rust/ @iamrecursion @wdanilo @radeusgd @4e6
 
 # Repo Configuration
 /.github/settings.yml @iamrecursion

@@ -2,6 +2,7 @@ package org.enso.table.data.column.storage;
 
 import java.util.BitSet;
 import java.util.Comparator;
+import java.util.function.Function;
 
 import org.enso.table.data.column.builder.object.StringBuilder;
 import org.enso.table.data.column.operation.map.MapOpStorage;
@@ -143,5 +144,10 @@ public class StringStorage extends ObjectStorage {
   public StringStorage slice(int offset, int limit) {
     ObjectStorage storage = super.slice(offset, limit);
     return new StringStorage(storage.getData(), storage.size());
+  }
+
+  @Override
+  protected String getPresentCsvString(int index, Function<Object, String> toCsvString) {
+    return getItem(index);
   }
 }

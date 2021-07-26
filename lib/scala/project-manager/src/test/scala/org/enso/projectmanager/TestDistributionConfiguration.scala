@@ -1,6 +1,10 @@
 package org.enso.projectmanager
 
-import org.enso.distribution.{DistributionManager, EditionManager}
+import org.enso.distribution.{
+  DistributionManager,
+  EditionManager,
+  TemporaryDirectoryManager
+}
 import org.enso.distribution.locking.ResourceManager
 
 import java.nio.file.Path
@@ -11,7 +15,6 @@ import org.enso.runtimeversionmanager.components.{
   RuntimeVersionManagementUserInterface,
   RuntimeVersionManager
 }
-import org.enso.runtimeversionmanager.distribution.TemporaryDirectoryManager
 import org.enso.runtimeversionmanager.releases.engine.{
   EngineRelease,
   EngineReleaseProvider
@@ -28,10 +31,10 @@ import org.enso.runtimeversionmanager.releases.{
 import org.enso.runtimeversionmanager.runner.{JVMSettings, JavaCommand}
 import org.enso.runtimeversionmanager.test.{
   FakeEnvironment,
-  HasTestDirectory,
   NoopComponentUpdaterFactory,
   TestLocalLockManager
 }
+import org.enso.testkit.HasTestDirectory
 
 import scala.jdk.OptionConverters.RichOptional
 import scala.util.{Failure, Success, Try}
@@ -64,12 +67,10 @@ class TestDistributionConfiguration(
 
   lazy val resourceManager = new ResourceManager(lockManager)
 
-  lazy val editionManager: EditionManager = new EditionManager(
-    distributionManager.paths.editionSearchPaths.toList
-  )
+  lazy val editionManager: EditionManager = EditionManager(distributionManager)
 
   lazy val temporaryDirectoryManager =
-    new TemporaryDirectoryManager(distributionManager, resourceManager)
+    TemporaryDirectoryManager(distributionManager, resourceManager)
 
   lazy val componentConfig = new GraalVMComponentConfiguration
 

@@ -2,7 +2,6 @@ package org.enso.pkg
 
 import io.circe.{Json, JsonObject}
 import nl.gn0s1s.bump.SemVer
-import org.enso.editions.SemVerEnsoVersion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.{Inside, OptionValues}
@@ -64,9 +63,7 @@ class ConfigSpec
           |""".stripMargin
       val parsed = Config.fromYaml(oldFormat).get
 
-      parsed.edition.get.engineVersion should contain(
-        SemVerEnsoVersion(SemVer(1, 2, 3))
-      )
+      parsed.edition.get.engineVersion should contain(SemVer(1, 2, 3))
 
       val serialized  = parsed.toYaml
       val parsedAgain = Config.fromYaml(serialized).get

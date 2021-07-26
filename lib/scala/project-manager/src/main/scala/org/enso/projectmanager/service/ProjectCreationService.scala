@@ -1,7 +1,9 @@
 package org.enso.projectmanager.service
 
 import akka.actor.ActorRef
+import com.typesafe.scalalogging.Logger
 import nl.gn0s1s.bump.SemVer
+import org.enso.logger.masking.MaskedPath
 import org.enso.projectmanager.control.core.CovariantFlatMap
 import org.enso.projectmanager.control.core.syntax._
 import org.enso.projectmanager.control.effect.{ErrorChannel, Sync}
@@ -24,6 +26,8 @@ class ProjectCreationService[
   distributionConfiguration: DistributionConfiguration,
   loggingServiceDescriptor: LoggingServiceDescriptor
 ) extends ProjectCreationServiceApi[F] {
+
+  private lazy val logger = Logger[ProjectCreationService[F]]
 
   /** @inheritdoc */
   override def createProject(
@@ -56,6 +60,10 @@ class ProjectCreationService[
         runner.newProject(path, name, engineVersion, None, None, Seq()).get
       val jvmSettings = distributionConfiguration.defaultJVMSettings
       runner.withCommand(settings, jvmSettings) { command =>
+        logger.trace(
+          s"Running engine $engineVersion to create project $name at " +
+          s"[${MaskedPath(path).applyMasking()}]."
+        )
         command.run().get
       }
     }

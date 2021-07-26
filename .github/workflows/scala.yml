@@ -15,6 +15,8 @@ env:
   sbtVersion: 1.5.2
   # Please ensure that this is in sync with rustVersion in build.sbt
   rustToolchain: nightly-2021-05-12
+  # Some moderately recent version of Node.JS is needed to run the library download tests.
+  nodeVersion: 14.17.2
 
 jobs:
   test_and_publish:
@@ -80,6 +82,15 @@ jobs:
           graalvm-version: ${{ env.graalVersion }}
           java-version: ${{ env.javaVersion }}
           native-image: true
+      - name: Install Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ env.nodeVersion }}
+      - name: Install Dependencies of the Simple Library Server
+        shell: bash
+        working-directory: tools/simple-library-server
+        run: |
+          npm install
       - name: Set Up SBT
         shell: bash
         run: |

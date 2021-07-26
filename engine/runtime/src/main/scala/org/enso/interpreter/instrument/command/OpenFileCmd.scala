@@ -22,8 +22,7 @@ class OpenFileCmd(request: Api.OpenFileNotification) extends Command(None) {
       try {
         ctx.executionService.setModuleSources(
           request.path,
-          request.contents,
-          request.isIndexed
+          request.contents
         )
       } finally {
         ctx.locking.releaseReadCompilationLock()

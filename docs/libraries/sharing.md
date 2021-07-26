@@ -62,5 +62,17 @@ import <namespace>.<Project_Name>
 
 ## Publishing
 
-> Soon it will be possible to share the libraries through the Marketplace, but
-> it is still a work in progress.
+To publish a library, first you must obtain the upload URL of the repository, if
+you are hosting the repository locally it will be `http://localhost:8080/upload`
+(or possibly with a different port if that was overridden).
+
+If the repository requires authentication, it is best to set it up by setting
+the `ENSO_AUTH_TOKEN` environment variable to the value of your secret token.
+
+Then you can use the Enso CLI to upload the project:
+
+```bash
+enso publish-library --upload-url <URL> <path to project root>
+```
+
+See `enso publish-library --help` for more information.

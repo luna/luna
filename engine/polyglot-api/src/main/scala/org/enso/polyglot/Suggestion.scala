@@ -10,6 +10,10 @@ import org.enso.logger.masking.ToLogString
 @JsonSubTypes(
   Array(
     new JsonSubTypes.Type(
+      value = classOf[Suggestion.Module],
+      name  = "suggestionModule"
+    ),
+    new JsonSubTypes.Type(
       value = classOf[Suggestion.Atom],
       name  = "suggestionAtom"
     ),
@@ -45,11 +49,15 @@ object Suggestion {
 
     def apply(suggestion: Suggestion): Kind =
       suggestion match {
+        case _: Module   => Module
         case _: Atom     => Atom
         case _: Method   => Method
         case _: Function => Function
         case _: Local    => Local
       }
+
+    /** The module suggestion. */
+    case object Module extends Kind
 
     /** The atom suggestion. */
     case object Atom extends Kind
@@ -69,6 +77,7 @@ object Suggestion {
 
     def apply(suggestion: Suggestion): Option[String] =
       suggestion match {
+        case _: Module      => None
         case _: Atom        => None
         case method: Method => Some(method.selfType)
         case _: Function    => None
@@ -117,6 +126,37 @@ object Suggestion {
     */
   case class Scope(start: Position, end: Position)
 
+  /** A module.
+    *
+    * @param module the fully qualified module name
+    * @param documentation the documentation string
+    * @param documentationHtml the documentation rendered as HTML
+    * @param reexport the module re-exporting this module
+    */
+  case class Module(
+    module: String,
+    documentation: Option[String],
+    documentationHtml: Option[String],
+    reexport: Option[String] = None
+  ) extends Suggestion
+      with ToLogString {
+
+    override def name: String =
+      module
+
+    override def externalId: Option[ExternalId] =
+      None
+
+    override def returnType: String =
+      module
+
+    /** @inheritdoc */
+    override def toLogString(shouldMask: Boolean): String =
+      s"Module(module=$module,name=$name,documentation=" +
+      (if (shouldMask) documentation.map(_ => STUB) else documentation) +
+      s",reexport=$reexport)"
+  }
+
   /** A value constructor.
     *
     * @param externalId the external id
@@ -125,6 +165,8 @@ object Suggestion {
     * @param arguments the list of arguments
     * @param returnType the type of an atom
     * @param documentation the documentation string
+    * @param documentationHtml the documentation rendered as HTML
+    * @param reexport the module re-exporting this atom
     */
   case class Atom(
     externalId: Option[ExternalId],
@@ -133,7 +175,8 @@ object Suggestion {
     arguments: Seq[Argument],
     returnType: String,
     documentation: Option[String],
-    documentationHtml: Option[String]
+    documentationHtml: Option[String],
+    reexport: Option[String] = None
   ) extends Suggestion
       with ToLogString {
 
@@ -148,7 +191,8 @@ object Suggestion {
       s",documentation=" + (if (shouldMask) documentation.map(_ => STUB)
                             else documentation) +
       s",documentationHtml=" + (if (shouldMask) documentationHtml.map(_ => STUB)
-                                else documentationHtml) + ")"
+                                else documentationHtml) +
+      s",reexport=$reexport)"
   }
 
   /** A function defined on a type or a module.
@@ -156,10 +200,12 @@ object Suggestion {
     * @param externalId the external id
     * @param module the module name
     * @param name the method name
-    * @param arguments the function arguments
+    * @param arguments the list of arguments
     * @param selfType the self type of a method
     * @param returnType the return type of a method
     * @param documentation the documentation string
+    * @param documentationHtml the documentation rendered as HTML
+    * @param reexport the module re-exporting this method
     */
   case class Method(
     externalId: Option[ExternalId],
@@ -169,7 +215,8 @@ object Suggestion {
     selfType: String,
     returnType: String,
     documentation: Option[String],
-    documentationHtml: Option[String]
+    documentationHtml: Option[String],
+    reexport: Option[String] = None
   ) extends Suggestion
       with ToLogString {
 
@@ -185,7 +232,7 @@ object Suggestion {
                            else documentation) +
       s",documentationHtml=" + (if (shouldMask) documentationHtml.map(_ => STUB)
                                 else documentationHtml) +
-      ")"
+      s",reexport=$reexport)"
   }
 
   /** A local function definition.

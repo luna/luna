@@ -1,6 +1,7 @@
 package org.enso.runtimeversionmanager.test
 
 import org.enso.distribution.{Environment, FileSystem}
+import org.enso.testkit.HasTestDirectory
 
 import java.nio.file.{Files, Path}
 
@@ -44,11 +45,13 @@ trait FakeEnvironment { self: HasTestDirectory =>
     val configDir  = getTestDirectory.resolve("test_config")
     val binDir     = getTestDirectory.resolve("test_bin")
     val runDir     = getTestDirectory.resolve("test_run")
+    val homeDir    = getTestDirectory.resolve("test_home")
     val env = extraOverrides
       .updated("ENSO_DATA_DIRECTORY", dataDir.toString)
       .updated("ENSO_CONFIG_DIRECTORY", configDir.toString)
       .updated("ENSO_BIN_DIRECTORY", binDir.toString)
       .updated("ENSO_RUNTIME_DIRECTORY", runDir.toString)
+      .updated("ENSO_HOME", homeDir.toString)
     val fakeEnvironment = new Environment {
       override def getPathToRunningExecutable: Path = executable
 

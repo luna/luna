@@ -2,11 +2,13 @@ from Standard.Base import all
 
 import Standard.Geo.Geo_Json
 import Standard.Table.Io.Csv
+import Standard.Table.Io.Spreadsheet
 import Standard.Table.Data.Table
 import Standard.Table.Data.Column
 import Standard.Table.Data.Order_Rule
 
 from Standard.Table.Io.Csv export all hiding Parser
+from Standard.Table.Io.Spreadsheet export all hiding Reader
 
 export Standard.Table.Data.Column
 

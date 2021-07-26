@@ -21,7 +21,7 @@ object TestLogger {
     * be ran with `parallelExecution` set to false, as global logger state has
     * to be modified to gather the logs.
     */
-  def gatherLogs(action: => Unit): Seq[TestLogMessage] = {
+  def gatherLogs[R](action: => R): (R, Seq[TestLogMessage]) = {
     LoggingServiceManager.dropPendingLogs()
     if (LoggingServiceManager.isSetUp()) {
       throw new IllegalStateException(
@@ -35,10 +35,10 @@ object TestLogger {
       LogLevel.Trace
     )
     Await.ready(future, 1.second)
-    action
+    val result = action
     Thread.sleep(100)
     LoggingServiceManager.tearDown()
-    printer.getLoggedMessages
+    (result, printer.getLoggedMessages)
   }
 
   /** Drops any logs that are pending due to the logging service not being set

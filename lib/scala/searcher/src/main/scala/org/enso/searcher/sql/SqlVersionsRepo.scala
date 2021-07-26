@@ -1,45 +1,51 @@
 package org.enso.searcher.sql
 
-import java.io.File
 import java.util
 
-import org.enso.searcher.FileVersionsRepo
+import org.enso.searcher.VersionsRepo
 import slick.jdbc.SQLiteProfile.api._
 import slick.jdbc.meta.MTable
 
 import scala.concurrent.{ExecutionContext, Future}
 
 final class SqlVersionsRepo(db: SqlDatabase)(implicit ec: ExecutionContext)
-    extends FileVersionsRepo[Future] {
+    extends VersionsRepo[Future] {
 
   /** Initialize the repo. */
   override def init: Future[Unit] =
-    db.run(initQuery)
+    db.run(initQuery.transactionally)
 
   /** @inheritdoc */
-  override def getVersion(file: File): Future[Option[Array[Byte]]] =
-    db.run(getVersionQuery(file))
+  override def getVersion(module: String): Future[Option[Array[Byte]]] =
+    db.run(getVersionQuery(module))
 
   /** @inheritdoc */
   override def setVersion(
-    file: File,
+    module: String,
     digest: Array[Byte]
   ): Future[Option[Array[Byte]]] =
-    db.run(setVersionQuery(file, digest))
+    db.run(setVersionQuery(module, digest))
 
   /** @inheritdoc */
-  override def updateVersion(file: File, digest: Array[Byte]): Future[Boolean] =
-    db.run(updateVersionQuery(file, digest))
+  override def updateVersion(
+    module: String,
+    digest: Array[Byte]
+  ): Future[Boolean] =
+    db.run(updateVersionQuery(module, digest))
 
   /** @inheritdoc */
   override def updateVersions(
-    versions: Seq[(File, Array[Byte])]
+    versions: Seq[(String, Array[Byte])]
   ): Future[Unit] =
-    db.run(updateVersionsQuery(versions))
+    db.run(updateVersionsQuery(versions).transactionally)
 
   /** @inheritdoc */
-  override def remove(file: File): Future[Unit] =
-    db.run(removeQuery(file))
+  override def remove(module: String): Future[Unit] =
+    db.run(removeQuery(module))
+
+  /** @inheritdoc */
+  override def remove(modules: Seq[String]): Future[Unit] =
+    db.run(removeModulesQuery(modules))
 
   /** @inheritdoc */
   override def clean: Future[Unit] =
@@ -51,7 +57,7 @@ final class SqlVersionsRepo(db: SqlDatabase)(implicit ec: ExecutionContext)
 
   /** The query to initialize the repo. */
   private def initQuery: DBIO[Unit] = {
-    val table = FileVersions
+    val table = ModuleVersions
     for {
       tables <- MTable.getTables(table.shaped.value.tableName)
       _      <- if (tables.isEmpty) table.schema.create else DBIO.successful(())
@@ -60,54 +66,54 @@ final class SqlVersionsRepo(db: SqlDatabase)(implicit ec: ExecutionContext)
 
   /** The query to clean the repo. */
   private def cleanQuery: DBIO[Unit] =
-    FileVersions.delete >> DBIO.successful(())
+    ModuleVersions.delete >> DBIO.successful(())
 
   /** The query to get the version digest of the file.
     *
-    * @param file the file path
+    * @param module the module name
     * @return the version digest
     */
-  private def getVersionQuery(file: File): DBIO[Option[Array[Byte]]] = {
+  private def getVersionQuery(module: String): DBIO[Option[Array[Byte]]] = {
     val query = for {
-      row <- FileVersions
-      if row.path === file.toString
+      row <- ModuleVersions
+      if row.module === module
     } yield row.digest
     query.result.headOption
   }
 
   /** The query to set the version digest of the file.
     *
-    * @param file the file path
+    * @param module the module name
     * @param version the version digest
     * @return the previously recorded vile version
     */
   private def setVersionQuery(
-    file: File,
+    module: String,
     version: Array[Byte]
   ): DBIO[Option[Array[Byte]]] = {
-    val upsertQuery = FileVersions
-      .insertOrUpdate(FileVersionRow(file.toString, version))
+    val upsertQuery =
+      ModuleVersions.insertOrUpdate(ModuleVersionRow(module, version))
     for {
-      version <- getVersionQuery(file)
+      version <- getVersionQuery(module)
       _       <- upsertQuery
     } yield version
   }
 
   /** The query to update the version if it differs from the recorded version.
     *
-    * @param file the file path
+    * @param module the module name
     * @param version the version digest
     * @return `true` if the version has been updated
     */
   private def updateVersionQuery(
-    file: File,
+    module: String,
     version: Array[Byte]
   ): DBIO[Boolean] =
     for {
-      repoVersion <- getVersionQuery(file)
-      versionsEquals = repoVersion.fold(false)(compareVersions(_, version))
+      moduleVersion <- getVersionQuery(module)
+      versionsEquals = moduleVersion.fold(false)(compareVersions(_, version))
       _ <-
-        if (!versionsEquals) setVersionQuery(file, version)
+        if (!versionsEquals) setVersionQuery(module, version)
         else DBIO.successful(None)
     } yield !versionsEquals
 
@@ -116,11 +122,11 @@ final class SqlVersionsRepo(db: SqlDatabase)(implicit ec: ExecutionContext)
     * @param versions files with corresponding digests
     */
   private def updateVersionsQuery(
-    versions: Seq[(File, Array[Byte])]
+    versions: Seq[(String, Array[Byte])]
   ): DBIO[Unit] =
     if (versions.nonEmpty) {
-      def upsertQuery(file: File, version: Array[Byte]) = FileVersions
-        .insertOrUpdate(FileVersionRow(file.toString, version))
+      def upsertQuery(module: String, version: Array[Byte]) =
+        ModuleVersions.insertOrUpdate(ModuleVersionRow(module, version))
       DBIO.sequence(versions.map(Function.tupled(upsertQuery))) >>
       DBIO.successful(())
     } else {
@@ -129,14 +135,27 @@ final class SqlVersionsRepo(db: SqlDatabase)(implicit ec: ExecutionContext)
 
   /** The query to remove the version record.
     *
-    * @param file the file path
+    * @param module the module name
     */
-  private def removeQuery(file: File): DBIO[Unit] = {
+  private def removeQuery(module: String): DBIO[Unit] = {
     val query = for {
-      row <- FileVersions
-      if row.path === file.toString
+      row <- ModuleVersions
+      if row.module === module
     } yield row
     query.delete >> DBIO.successful(())
+  }
+
+  /** The query to remove multiple module versions.
+    *
+    * @param modules the list of module names
+    */
+  private def removeModulesQuery(modules: Seq[String]): DBIO[Unit] = {
+    val deleteQuery = ModuleVersions
+      .filter(_.module.inSet(modules))
+      .delete
+    for {
+      _ <- deleteQuery
+    } yield ()
   }
 
   private def compareVersions(v1: Array[Byte], v2: Array[Byte]): Boolean =

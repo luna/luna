@@ -1,11 +1,17 @@
 package org.enso.librarymanager
 
 import com.typesafe.scalalogging.Logger
-import org.enso.distribution.{DistributionManager, LanguageHome}
+import org.enso.cli.task.ProgressReporter
+import org.enso.distribution.locking.{LockUserInterface, ResourceManager}
+import org.enso.distribution.{
+  DistributionManager,
+  LanguageHome,
+  TemporaryDirectoryManager
+}
 import org.enso.editions.{Editions, LibraryName, LibraryVersion}
 import org.enso.librarymanager.local.DefaultLocalLibraryProvider
 import org.enso.librarymanager.published.bundles.LocalReadOnlyRepository
-import org.enso.librarymanager.published.cache.NoOpCache
+import org.enso.librarymanager.published.cache.DownloadingLibraryCache
 import org.enso.librarymanager.published.{
   DefaultPublishedLibraryProvider,
   PublishedLibraryProvider
@@ -17,12 +23,20 @@ import java.nio.file.Path
 /** A helper class for loading libraries.
   *
   * @param distributionManager  a distribution manager
+  * @param resourceManager      a resource manager
+  * @param lockUserInterface    an interface that will handle notifications
+  *                             about waiting on locks
+  * @param progressReporter     an interface that will handle progress
+  *                             notifications
   * @param languageHome         a language home which may contain bundled libraries
   * @param edition              the edition used in the project
   * @param preferLocalLibraries project setting whether to use local libraries
   */
 class DefaultLibraryProvider(
   distributionManager: DistributionManager,
+  resourceManager: ResourceManager,
+  lockUserInterface: LockUserInterface,
+  progressReporter: ProgressReporter,
   languageHome: Option[LanguageHome],
   edition: Editions.ResolvedEdition,
   preferLocalLibraries: Boolean
@@ -36,8 +50,14 @@ class DefaultLibraryProvider(
 
   private val resolver = LibraryResolver(localLibraryProvider)
 
-  // TODO [RW] actual cache that can download libraries will be implemented in #1772
-  private val primaryCache = new NoOpCache
+  private val cacheRoot = distributionManager.paths.cachedLibraries
+  private val primaryCache = new DownloadingLibraryCache(
+    cacheRoot,
+    TemporaryDirectoryManager(distributionManager, resourceManager),
+    resourceManager,
+    lockUserInterface,
+    progressReporter
+  )
   private val additionalCacheLocations = {
     val engineBundleRoot = languageHome.map(_.libraries)
     val locations =
@@ -57,7 +77,7 @@ class DefaultLibraryProvider(
       s"Local library search paths = ${localLibrarySearchPaths.map(mask)}"
     )
     logger.trace(
-      s"Primary library cache = Not implemented"
+      s"Primary library cache = ${mask(cacheRoot)}"
     )
     logger.trace(
       s"Auxiliary (bundled) library caches = " +
@@ -95,19 +115,8 @@ class DefaultLibraryProvider(
           }
 
       case Right(version @ LibraryVersion.Published(semver, repository)) =>
-        val dependencyResolver = { name: LibraryName =>
-          resolver
-            .resolveLibraryVersion(name, edition, preferLocalLibraries)
-            .toOption
-        }
-
         publishedLibraryProvider
-          .findLibrary(
-            libraryName,
-            semver,
-            repository,
-            dependencyResolver
-          )
+          .findLibrary(libraryName, semver, repository)
           .map(ResolvedLibrary(libraryName, version, _))
           .toEither
           .left

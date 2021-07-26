@@ -17,11 +17,9 @@ trait ProjectManagementOps { this: BaseServerSpec =>
 
   def createProject(
     name: String,
-    version: Option[SemVer]                                = None,
     missingComponentAction: Option[MissingComponentAction] = None
   )(implicit client: WsTestClient): UUID = {
     val fields = Seq("name" -> name.asJson) ++
-      version.map(v => "version" -> v.asJson).toSeq ++
       missingComponentAction
         .map(a => "missingComponentAction" -> a.asJson)
         .toSeq

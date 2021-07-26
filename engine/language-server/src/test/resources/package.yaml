@@ -1,6 +1,5 @@
 license: APLv2
 name: Standard
-enso-version: default
 version: "0.1.0"
 author: "Enso Team <contact@enso.org>"
 maintainer: "Enso Team <contact@enso.org>"

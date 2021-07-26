@@ -54,13 +54,16 @@ class EditionSerializationSpec extends AnyWordSpec with Matchers with Inside {
           .url shouldEqual "http://127.0.0.1:8080/root"
 
         edition.libraries.values should contain theSameElementsAs Seq(
-          Editions.Raw.LocalLibrary("Foo.Local"),
-          Editions.Raw.PublishedLibrary("Bar.Baz", SemVer(0, 0, 0), "example"),
-          Editions.Raw.PublishedLibrary("A.B", SemVer(1, 0, 1), "bar")
+          Editions.Raw.LocalLibrary(LibraryName("Foo", "Local")),
+          Editions.Raw.PublishedLibrary(
+            LibraryName("Bar", "Baz"),
+            SemVer(0, 0, 0),
+            "example"
+          ),
+          Editions.Raw
+            .PublishedLibrary(LibraryName("A", "B"), SemVer(1, 0, 1), "bar")
         )
-        edition.engineVersion should contain(
-          SemVerEnsoVersion(SemVer(1, 2, 3, Some("SNAPSHOT")))
-        )
+        edition.engineVersion should contain(SemVer(1, 2, 3, Some("SNAPSHOT")))
       }
     }
 
@@ -82,7 +85,7 @@ class EditionSerializationSpec extends AnyWordSpec with Matchers with Inside {
       val parsed = EditionSerialization.parseYamlString(
         """extends: foo
           |libraries:
-          |- name: bar
+          |- name: bar.baz
           |  repository: local
           |  version: 1.2.3-SHOULD-NOT-BE-HERE
           |""".stripMargin
@@ -94,7 +97,7 @@ class EditionSerializationSpec extends AnyWordSpec with Matchers with Inside {
       val parsed2 = EditionSerialization.parseYamlString(
         """extends: foo
           |libraries:
-          |- name: bar
+          |- name: bar.baz
           |  repository: something
           |""".stripMargin
       )

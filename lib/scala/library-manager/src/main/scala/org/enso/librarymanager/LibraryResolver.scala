@@ -54,7 +54,7 @@ case class LibraryResolver(
   ): Either[LibraryResolutionError, LibraryVersion] = {
     import Editions.Resolved._
     val immediateResult =
-      edition.libraries.get(libraryName.qualifiedName).map {
+      edition.libraries.get(libraryName).map {
         case LocalLibrary(_) =>
           Right(LibraryVersion.Local)
         case PublishedLibrary(_, version, repository) =>

@@ -1,8 +1,9 @@
 package org.enso.languageserver.search
 
 import java.util.UUID
+import java.util.concurrent.Executors
 
-import akka.actor.{Actor, ActorRef, Props, Stash}
+import akka.actor.{Actor, ActorRef, Props, Stash, Status}
 import akka.pattern.{ask, pipe}
 import com.typesafe.scalalogging.LazyLogging
 import org.enso.languageserver.capability.CapabilityProtocol.{
@@ -38,11 +39,12 @@ import org.enso.polyglot.Suggestion
 import org.enso.polyglot.data.TypeGraph
 import org.enso.polyglot.runtime.Runtime.Api
 import org.enso.searcher.data.QueryResult
-import org.enso.searcher.{FileVersionsRepo, SuggestionsRepo}
+import org.enso.searcher.{SuggestionsRepo, VersionsRepo}
 import org.enso.text.ContentVersion
 import org.enso.text.editing.model.Position
 
-import scala.concurrent.Future
+import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 /** The handler of search requests.
@@ -80,6 +82,7 @@ import scala.util.{Failure, Success}
   * @param config the server configuration
   * @param contentRootManager the content root manager
   * @param suggestionsRepo the suggestions repo
+  * @param versionsRepo the versions repo
   * @param sessionRouter the session router
   * @param runtimeConnector the runtime connector
   */
@@ -87,7 +90,7 @@ final class SuggestionsHandler(
   config: Config,
   contentRootManager: ContentRootManager,
   suggestionsRepo: SuggestionsRepo[Future],
-  fileVersionsRepo: FileVersionsRepo[Future],
+  versionsRepo: VersionsRepo[Future],
   sessionRouter: ActorRef,
   runtimeConnector: ActorRef
 ) extends Actor
@@ -95,8 +98,7 @@ final class SuggestionsHandler(
     with LazyLogging
     with UnhandledLogging {
 
-  import SuggestionsHandler.ProjectNameUpdated
-  import context.dispatcher
+  import SuggestionsHandler._
 
   private val timeout = config.executionContext.requestTimeout
 
@@ -105,7 +107,7 @@ final class SuggestionsHandler(
       "Starting suggestions handler from [{}, {}, {}].",
       config,
       suggestionsRepo,
-      fileVersionsRepo
+      versionsRepo
     )
     context.system.eventStream
       .subscribe(self, classOf[Api.ExpressionUpdates])
@@ -170,6 +172,13 @@ final class SuggestionsHandler(
       logger.info("Initializing: got type graph response.")
       tryInitialize(init.copy(typeGraph = Some(g)))
 
+    case Status.Failure(ex) =>
+      logger.error(
+        "Initialization failure [{}]. {}",
+        ex.getClass,
+        ex.getMessage
+      )
+
     case _ => stash()
   }
 
@@ -179,15 +188,23 @@ final class SuggestionsHandler(
   ): Receive = {
     case Api.Response(_, Api.VerifyModulesIndexResponse(toRemove)) =>
       logger.info("Verifying: got verification response.")
-      suggestionsRepo
-        .removeModules(toRemove)
-        .map(_ => SuggestionsHandler.Verified)
-        .pipeTo(self)
+      val removeAction = for {
+        _ <- versionsRepo.remove(toRemove)
+        _ <- suggestionsRepo.removeModules(toRemove)
+      } yield SuggestionsHandler.Verified
+      removeAction.pipeTo(self)
 
     case SuggestionsHandler.Verified =>
       logger.info("Verified.")
-      context.become(initialized(projectName, graph, Set()))
+      context.become(initialized(projectName, graph, Set(), State()))
       unstashAll()
+
+    case Status.Failure(ex) =>
+      logger.error(
+        "Database verification failure [{}]. {}",
+        ex.getClass,
+        ex.getMessage
+      )
 
     case _ =>
       stash()
@@ -196,25 +213,35 @@ final class SuggestionsHandler(
   def initialized(
     projectName: String,
     graph: TypeGraph,
-    clients: Set[ClientId]
+    clients: Set[ClientId],
+    state: State
   ): Receive = {
     case AcquireCapability(
           client,
           CapabilityRegistration(ReceivesSuggestionsDatabaseUpdates())
         ) =>
       sender() ! CapabilityAcquired
-      context.become(initialized(projectName, graph, clients + client.clientId))
+      context.become(
+        initialized(projectName, graph, clients + client.clientId, state)
+      )
 
     case ReleaseCapability(
           client,
           CapabilityRegistration(ReceivesSuggestionsDatabaseUpdates())
         ) =>
       sender() ! CapabilityReleased
-      context.become(initialized(projectName, graph, clients - client.clientId))
+      context.become(
+        initialized(projectName, graph, clients - client.clientId, state)
+      )
+
+    case msg: Api.SuggestionsDatabaseModuleUpdateNotification
+        if state.isSuggestionUpdatesRunning =>
+      state.suggestionUpdatesQueue.enqueue(msg)
 
     case msg: Api.SuggestionsDatabaseModuleUpdateNotification =>
+      logger.debug("Got module update [{}].", msg.module)
       val isVersionChanged =
-        fileVersionsRepo.getVersion(msg.file).map { digestOpt =>
+        versionsRepo.getVersion(msg.module).map { digestOpt =>
           !digestOpt.map(ContentVersion(_)).contains(msg.version)
         }
       val applyUpdatesIfVersionChanged =
@@ -225,20 +252,36 @@ final class SuggestionsHandler(
       applyUpdatesIfVersionChanged
         .onComplete {
           case Success(Some(notification)) =>
+            logger.debug("Complete module update [{}].", msg.module)
             if (notification.updates.nonEmpty) {
               clients.foreach { clientId =>
                 sessionRouter ! DeliverToJsonController(clientId, notification)
               }
             }
+            self ! SuggestionsHandler.SuggestionUpdatesCompleted
           case Success(None) =>
+            logger.debug(
+              "Skip module update, version not changed [{}].",
+              msg.module
+            )
+            self ! SuggestionsHandler.SuggestionUpdatesCompleted
           case Failure(ex) =>
             logger.error(
               "Error applying suggestion database updates [{}, {}]. {}",
-              MaskedPath(msg.file.toPath),
+              msg.module,
               msg.version,
               ex.getMessage
             )
+            self ! SuggestionsHandler.SuggestionUpdatesCompleted
         }
+      context.become(
+        initialized(
+          projectName,
+          graph,
+          clients,
+          state.copy(isSuggestionUpdatesRunning = true)
+        )
+      )
 
     case Api.ExpressionUpdates(_, updates) =>
       logger.debug(
@@ -366,7 +409,7 @@ final class SuggestionsHandler(
     case InvalidateSuggestionsDatabase =>
       val action = for {
         _ <- suggestionsRepo.clean
-        _ <- fileVersionsRepo.clean
+        _ <- versionsRepo.clean
       } yield SearchProtocol.InvalidateModulesIndex
 
       val runtimeFailureMapper = RuntimeFailureMapper(contentRootManager)
@@ -430,7 +473,21 @@ final class SuggestionsHandler(
 
     case ProjectNameUpdated(name, updates) =>
       updates.foreach(sessionRouter ! _)
-      context.become(initialized(name, graph, clients))
+      context.become(initialized(name, graph, clients, state))
+
+    case SuggestionUpdatesCompleted =>
+      if (state.suggestionUpdatesQueue.nonEmpty) {
+        self ! state.suggestionUpdatesQueue.dequeue()
+      }
+      context.become(
+        initialized(
+          projectName,
+          graph,
+          clients,
+          state.copy(isSuggestionUpdatesRunning = false)
+        )
+      )
+
   }
 
   /** Transition the initialization process.
@@ -466,15 +523,17 @@ final class SuggestionsHandler(
     msg: Api.SuggestionsDatabaseModuleUpdateNotification
   ): Future[SuggestionsDatabaseUpdateNotification] =
     for {
-      actionResults      <- suggestionsRepo.applyActions(msg.actions)
-      (version, results) <- suggestionsRepo.applyTree(msg.updates)
-      _                  <- fileVersionsRepo.setVersion(msg.file, msg.version.toDigest)
+      actionResults <- suggestionsRepo.applyActions(msg.actions)
+      treeResults   <- suggestionsRepo.applyTree(msg.updates)
+      exportResults <- suggestionsRepo.applyExports(msg.exports)
+      version       <- suggestionsRepo.currentVersion
+      _             <- versionsRepo.setVersion(msg.module, msg.version.toDigest)
     } yield {
       val actionUpdates = actionResults.flatMap {
         case QueryResult(ids, Api.SuggestionsDatabaseAction.Clean(_)) =>
           ids.map(SuggestionsDatabaseUpdate.Remove)
       }
-      val treeUpdates = results.flatMap {
+      val treeUpdates = treeResults.flatMap {
         case QueryResult(ids, Api.SuggestionUpdate(suggestion, action)) =>
           val verb = action.getClass.getSimpleName
           action match {
@@ -501,9 +560,28 @@ final class SuggestionsHandler(
               }
           }
       }
+      val exportUpdates = exportResults.flatMap { queryResult =>
+        val update = queryResult.value
+        update.action match {
+          case Api.ExportsAction.Add() =>
+            queryResult.ids.map { id =>
+              SuggestionsDatabaseUpdate.Modify(
+                id       = id,
+                reexport = Some(fieldUpdate(update.exports.module))
+              )
+            }
+          case Api.ExportsAction.Remove() =>
+            queryResult.ids.map { id =>
+              SuggestionsDatabaseUpdate.Modify(
+                id       = id,
+                reexport = Some(fieldRemove)
+              )
+            }
+        }
+      }
       SuggestionsDatabaseUpdateNotification(
         version,
-        actionUpdates ++ treeUpdates
+        actionUpdates ++ treeUpdates ++ exportUpdates
       )
     }
 
@@ -525,6 +603,9 @@ final class SuggestionsHandler(
     */
   private def fieldUpdate[A](value: A): FieldUpdate[A] =
     FieldUpdate(FieldAction.Set, Some(value))
+
+  private def fieldRemove[A]: FieldUpdate[A] =
+    FieldUpdate[A](FieldAction.Remove, None)
 
   /** Construct [[SuggestionArgumentUpdate]] from the runtime message.
     *
@@ -583,6 +664,9 @@ final class SuggestionsHandler(
 
 object SuggestionsHandler {
 
+  implicit private val dispatcher: ExecutionContext =
+    ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+
   /** The notification about the project name update.
     *
     * @param projectName the new project name
@@ -605,6 +689,9 @@ object SuggestionsHandler {
 
   /** The notification that the suggestions database has been verified. */
   case object Verified
+
+  /** The notification that the suggestion updates are processed. */
+  case object SuggestionUpdatesCompleted
 
   /** The initialization state of the handler.
     *
@@ -631,6 +718,18 @@ object SuggestionsHandler {
       } yield (name, graph)
   }
 
+  /** The suggestion updates state.
+    *
+    * @param suggestionUpdatesQueue the queue containing update messages
+    * @param isSuggestionUpdatesRunning a flag for a running update action
+    */
+  case class State(
+    suggestionUpdatesQueue: mutable.Queue[
+      Api.SuggestionsDatabaseModuleUpdateNotification
+    ]                                   = mutable.Queue.empty,
+    isSuggestionUpdatesRunning: Boolean = false
+  )
+
   /** Creates a configuration object used to create a [[SuggestionsHandler]].
     *
     * @param config the server configuration
@@ -644,7 +743,7 @@ object SuggestionsHandler {
     config: Config,
     contentRootManager: ContentRootManager,
     suggestionsRepo: SuggestionsRepo[Future],
-    fileVersionsRepo: FileVersionsRepo[Future],
+    fileVersionsRepo: VersionsRepo[Future],
     sessionRouter: ActorRef,
     runtimeConnector: ActorRef
   ): Props =

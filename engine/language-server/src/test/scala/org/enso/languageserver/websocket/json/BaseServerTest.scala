@@ -5,8 +5,11 @@ import io.circe.literal._
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import org.apache.commons.io.FileUtils
+import org.enso.distribution.{DistributionManager, EditionManager, LanguageHome}
+import org.enso.editions.EditionResolver
 import org.enso.jsonrpc.test.JsonRpcServerTestKit
 import org.enso.jsonrpc.{ClientControllerFactory, Protocol}
+import org.enso.languageserver.TestClock
 import org.enso.languageserver.boot.resource.{
   DirectoriesInitialization,
   RepoInitialization,
@@ -18,6 +21,12 @@ import org.enso.languageserver.effect.ZioExec
 import org.enso.languageserver.event.InitializedEvent
 import org.enso.languageserver.filemanager._
 import org.enso.languageserver.io._
+import org.enso.languageserver.libraries.{
+  EditionReferenceResolver,
+  LocalLibraryManager,
+  ProjectSettingsManager
+}
+import org.enso.languageserver.monitoring.IdlenessMonitor
 import org.enso.languageserver.protocol.json.{
   JsonConnectionControllerFactory,
   JsonRpc
@@ -27,13 +36,16 @@ import org.enso.languageserver.runtime.{ContextRegistry, RuntimeFailureMapper}
 import org.enso.languageserver.search.SuggestionsHandler
 import org.enso.languageserver.session.SessionRouter
 import org.enso.languageserver.text.BufferRegistry
+import org.enso.pkg.PackageManager
 import org.enso.polyglot.data.TypeGraph
 import org.enso.polyglot.runtime.Runtime.Api
+import org.enso.runtimeversionmanager.test.FakeEnvironment
 import org.enso.searcher.sql.{SqlDatabase, SqlSuggestionsRepo, SqlVersionsRepo}
-import org.enso.testkit.EitherValue
+import org.enso.testkit.{EitherValue, HasTestDirectory}
 import org.enso.text.Sha3_224VersionCalculator
 import org.scalatest.OptionValues
 
+import java.nio.file
 import java.nio.file.Files
 import java.util.UUID
 import scala.concurrent.Await
@@ -42,7 +54,9 @@ import scala.concurrent.duration._
 class BaseServerTest
     extends JsonRpcServerTestKit
     with EitherValue
-    with OptionValues {
+    with OptionValues
+    with HasTestDirectory
+    with FakeEnvironment {
 
   import system.dispatcher
 
@@ -56,6 +70,7 @@ class BaseServerTest
   val config                = mkConfig
   val runtimeConnectorProbe = TestProbe()
   val versionCalculator     = Sha3_224VersionCalculator
+  val clock                 = TestClock()
 
   val typeGraph: TypeGraph = {
     val graph = TypeGraph("Any")
@@ -64,7 +79,12 @@ class BaseServerTest
     graph
   }
 
+  private val testDirectory =
+    Files.createTempDirectory("enso-test").toRealPath()
+  override def getTestDirectory: file.Path = testDirectory
+
   sys.addShutdownHook(FileUtils.deleteQuietly(testContentRoot.file))
+  sys.addShutdownHook(FileUtils.deleteQuietly(testDirectory.toFile))
 
   def mkConfig: Config =
     Config(
@@ -134,7 +154,6 @@ class BaseServerTest
     val bufferRegistry =
       system.actorOf(
         BufferRegistry.props(
-          versionsRepo,
           fileManager,
           runtimeConnectorProbe.ref
         )(
@@ -148,6 +167,10 @@ class BaseServerTest
         new FileSystem,
         zioExec
       )
+    )
+
+    val idlenessMonitor = system.actorOf(
+      IdlenessMonitor.props(clock)
     )
 
     val contextRegistry =
@@ -197,29 +220,93 @@ class BaseServerTest
       Api.VerifyModulesIndexResponse(Seq())
     )
 
+    locally {
+      val dataRoot = getTestDirectory.resolve("test_data")
+      val editions = dataRoot.resolve("editions")
+      Files.createDirectories(editions)
+      val distribution   = file.Path.of("distribution")
+      val currentEdition = buildinfo.Info.currentEdition + ".yaml"
+      val dest           = editions.resolve(currentEdition)
+      if (Files.notExists(dest)) {
+        Files.copy(
+          distribution.resolve("editions").resolve(currentEdition),
+          dest
+        )
+      }
+    }
+
+    val environment         = fakeInstalledEnvironment()
+    val languageHome        = LanguageHome.detectFromExecutableLocation(environment)
+    val distributionManager = new DistributionManager(environment)
+
+    val editionProvider =
+      EditionManager.makeEditionProvider(
+        distributionManager,
+        Some(languageHome)
+      )
+    val editionResolver = EditionResolver(editionProvider)
+    val editionReferenceResolver = new EditionReferenceResolver(
+      config.projectContentRoot.file,
+      editionProvider,
+      editionResolver
+    )
+    val editionManager = EditionManager(distributionManager, Some(languageHome))
+
+    val projectSettingsManager = system.actorOf(
+      ProjectSettingsManager.props(
+        config.projectContentRoot.file,
+        editionResolver
+      )
+    )
+
+    val localLibraryManager = system.actorOf(
+      LocalLibraryManager.props(
+        config.projectContentRoot.file,
+        distributionManager
+      )
+    )
+
     new JsonConnectionControllerFactory(
-      initializationComponent,
-      bufferRegistry,
-      capabilityRouter,
-      fileManager,
-      contentRootManagerActor,
-      contextRegistry,
-      suggestionsHandler,
-      stdOutController,
-      stdErrController,
-      stdInController,
-      runtimeConnectorProbe.ref,
-      config
+      mainComponent            = initializationComponent,
+      bufferRegistry           = bufferRegistry,
+      capabilityRouter         = capabilityRouter,
+      fileManager              = fileManager,
+      contentRootManager       = contentRootManagerActor,
+      contextRegistry          = contextRegistry,
+      suggestionsHandler       = suggestionsHandler,
+      stdOutController         = stdOutController,
+      stdErrController         = stdErrController,
+      stdInController          = stdInController,
+      runtimeConnector         = runtimeConnectorProbe.ref,
+      idlenessMonitor          = idlenessMonitor,
+      projectSettingsManager   = projectSettingsManager,
+      localLibraryManager      = localLibraryManager,
+      editionReferenceResolver = editionReferenceResolver,
+      editionManager           = editionManager,
+      config                   = config
     )
   }
 
-  def getInitialisedWsClient(): WsTestClient = {
-    val client = new WsTestClient(address)
+  /** Specifies if the `package.yaml` at project root should be auto-created. */
+  protected def initializeProjectPackage: Boolean = true
+
+  lazy val initPackage: Unit = {
+    if (initializeProjectPackage) {
+      PackageManager.Default.create(
+        config.projectContentRoot.file,
+        name = "TestProject"
+      )
+    }
+  }
+
+  def getInitialisedWsClient(debug: Boolean = false): WsTestClient = {
+    val client = new WsTestClient(address, debugMessages = debug)
     initSession(client)
     client
   }
 
   private def initSession(client: WsTestClient): UUID = {
+    initPackage
     val clientId = UUID.randomUUID()
     client.send(json"""
           { "jsonrpc": "2.0",
@@ -244,5 +331,4 @@ class BaseServerTest
     )
     clientId
   }
-
 }

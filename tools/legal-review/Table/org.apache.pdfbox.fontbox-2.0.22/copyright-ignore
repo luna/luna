@@ -1,0 +1,44 @@
+! this work for additional information regarding copyright ownership.
+"copyright",
+"copyright", "trademark", "acute", "dieresis", "notequal", "AE",
+%%Copyright:
+%%Copyright: -----------------------------------------------------------
+%%Copyright: All rights reserved.
+%%Copyright: CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+%%Copyright: CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+%%Copyright: CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+%%Copyright: DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+%%Copyright: HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+%%Copyright: INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+%%Copyright: LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+%%Copyright: MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%%Copyright: NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%%Copyright: Neither the name of Adobe Systems Incorporated nor the names
+%%Copyright: Neither the name of Adobe nor the names of its contributors
+%%Copyright: OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%%Copyright: Redistribution and use in source and binary forms, with or
+%%Copyright: Redistributions in binary form must reproduce the above
+%%Copyright: Redistributions of source code must retain the above
+%%Copyright: SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+%%Copyright: SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+%%Copyright: disclaimer in the documentation and/or other materials
+%%Copyright: THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+%%Copyright: copyright notice, this list of conditions and the following
+%%Copyright: disclaimer.
+%%Copyright: following conditions are met:
+%%Copyright: may be used to endorse or promote products derived from
+%%Copyright: of its contributors may be used to endorse or promote
+%%Copyright: products derived from this software without specific prior
+%%Copyright: provided with the distribution.
+%%Copyright: without modification, are permitted provided that the
+%%Copyright: this software without specific prior written permission.
+%%Copyright: written permission.
+00A9          ; Common # So       COPYRIGHT SIGN
+2116..2117    ; Common # So   [2] NUMERO SIGN..SOUND RECORDING COPYRIGHT
+font.addValueToTopDict("Copyright", getString(topDict, "Copyright"));
+public static final int NAME_COPYRIGHT = 0;
+regarding copyright ownership.  The ASF licenses this file
+register(new Key(12, 0), "Copyright");
+this work for additional information regarding copyright ownership.
+{0251, "copyright"},
+{170, "copyright"},

@@ -1,0 +1,149 @@
+from Standard.Base import all
+
+import Standard.Table.Data.Table
+import Standard.Base.Data.Time.Date
+
+polyglot java import org.enso.table.format.xlsx.Reader
+
+## Reads the contents of `this` and parses them as an XLSX dataframe.
+
+   Arguments
+   - sheet: specifies which sheet should be read. If left unspecified, reads
+     the active sheet (i.e. the one that would be displayed when the file is
+     opened in Excel). Can be a 0-based index to specify the number of the sheet
+     to read, or a `Text` corresponding to the sheet name.
+   - has_header: Specifies whether the first row of the sheet should be
+     interpreted as a header, containing storage names. If set to `False`,
+     storage names will be automatically generated.
+   - prefix: text that should be prepended to automatically generated column
+     names. For example, if `prefix` is set to `X`, the columns will be named
+     `X0`, `X1`, etc. This argument has no effect if the storage name is
+     inferred from the sheet header row or set manually.
+
+   > Example
+     Read the active sheet of an XLSX from disk and convert it into a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xlsx_to_table = Examples.xlsx.read_xlsx
+
+   > Example
+     Read the sheet named `Dates` from an XLSX and convert it to a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xlsx_to_table = Examples.xlsx.read_xlsx sheet='Dates'
+File.File.read_xlsx : Integer | Text | Nothing -> Boolean -> Text -> Table
+File.File.read_xlsx sheet=Nothing has_header=True prefix='C' =
+    here.from_xlsx this sheet has_header prefix
+
+## Reads the contents of `this` and parses them as an XLSX dataframe.
+
+   Arguments
+   - file: an XLSX file containing the spreadsheet to be read.
+   - sheet: specifies which sheet should be read. If left unspecified, reads
+     the active sheet (i.e. the one that would be displayed when the file is
+     opened in Excel). Can be a 0-based index to specify the number of the sheet
+     to read, or a `Text` corresponding to the sheet name.
+   - has_header: Specifies whether the first row of the sheet should be
+     interpreted as a header, containing storage names. If set to `False`,
+     storage names will be automatically generated.
+   - prefix: text that should be prepended to automatically generated column
+     names. For example, if `prefix` is set to `X`, the columns will be named
+     `X0`, `X1`, etc. This argument has no effect if the storage name is
+     inferred from the sheet header row or set manually.
+
+   > Example
+     Read the active sheet of an XLSX from disk and convert it into a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xlsx_to_table = Table.from_xlsx Examples.xlsx
+
+   > Example
+     Read the sheet named `Dates` from an XLSX and convert it to a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xlsx_to_table = Table.from_xlsx Examples.xlsx sheet='Dates'
+from_xlsx : File.File -> Integer | Text | Nothing -> Boolean -> Text -> Table
+from_xlsx file sheet=Nothing has_header=True prefix='C' =
+    file.with_input_stream [File.Option.Read] stream->
+        stream.with_java_stream js->
+            Table.Table (Reader.read_xlsx js sheet has_header prefix Date.Date)
+
+## Reads the contents of `this` and parses them as an XLS dataframe.
+
+   Arguments
+   - sheet: specifies which sheet should be read. If left unspecified, reads
+     the active sheet (i.e. the one that would be displayed when the file is
+     opened in Excel). Can be a 0-based index to specify the number of the sheet
+     to read, or a `Text` corresponding to the sheet name.
+   - has_header: Specifies whether the first row of the sheet should be
+     interpreted as a header, containing storage names. If set to `False`,
+     storage names will be automatically generated.
+   - prefix: text that should be prepended to automatically generated column
+     names. For example, if `prefix` is set to `X`, the columns will be named
+     `X0`, `X1`, etc. This argument has no effect if the storage name is
+     inferred from the sheet header row or set manually.
+
+   > Example
+     Read the active sheet of an XLS from disk and convert it into a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xlsx_to_table = Examples.xls.read_xls
+
+   > Example
+     Read the sheet named `Dates` from an XLS and convert it to a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xls_to_table = Examples.xls.read_xls sheet='Dates'
+File.File.read_xls : Integer | Text | Nothing -> Boolean -> Text -> Table
+File.File.read_xls sheet=Nothing has_header=True prefix='C' =
+    here.from_xls this sheet has_header prefix
+
+## Reads the contents of `this` and parses them as an XLS dataframe.
+
+   Arguments
+   - file: an XLS file containing the spreadsheet to be read.
+   - sheet: specifies which sheet should be read. If left unspecified, reads
+     the active sheet (i.e. the one that would be displayed when the file is
+     opened in Excel). Can be a 0-based index to specify the number of the sheet
+     to read, or a `Text` corresponding to the sheet name.
+   - has_header: Specifies whether the first row of the sheet should be
+     interpreted as a header, containing storage names. If set to `False`,
+     storage names will be automatically generated.
+   - prefix: text that should be prepended to automatically generated column
+     names. For example, if `prefix` is set to `X`, the columns will be named
+     `X0`, `X1`, etc. This argument has no effect if the storage name is
+     inferred from the sheet header row or set manually.
+
+   > Example
+     Read the active sheet of an XLS from disk and convert it into a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xlsx_to_table = Table.from_xls Examples.xls
+
+   > Example
+     Read the sheet named `Dates` from an XLS and convert it to a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xls_to_table = Table.from_xls Examples.xls sheet='Dates'
+from_xls : File.File -> Integer | Text | Nothing -> Boolean -> Text -> Table
+from_xls file sheet=Nothing has_header=True prefix='C' =
+    file.with_input_stream [File.Option.Read] stream->
+        stream.with_java_stream js->
+            Table.Table (Reader.read_xls js sheet has_header prefix Date.Date)
+

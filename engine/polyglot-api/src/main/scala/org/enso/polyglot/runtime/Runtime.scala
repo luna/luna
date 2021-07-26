@@ -8,7 +8,7 @@ import com.fasterxml.jackson.module.scala.{
   ScalaObjectMapper
 }
 import org.enso.logger.masking.{MaskedPath, MaskedString, ToLogString}
-import org.enso.polyglot.Suggestion
+import org.enso.polyglot.{ModuleExports, Suggestion}
 import org.enso.polyglot.data.{Tree, TypeGraph}
 import org.enso.text.ContentVersion
 import org.enso.text.editing.model
@@ -209,6 +209,10 @@ object Runtime {
       new JsonSubTypes.Type(
         value = classOf[Api.LibraryLoaded],
         name  = "libraryLoaded"
+      ),
+      new JsonSubTypes.Type(
+        value = classOf[Api.ProgressNotification],
+        name  = "progressNotification"
       )
     )
   )
@@ -572,6 +576,7 @@ object Runtime {
         * @param documentation the documentation string to update
         * @param documentationHtml the HTML documentation to update
         * @param scope the scope to update
+        * @param reexport the reexport field to update
         */
       case class Modify(
         externalId: Option[Option[Suggestion.ExternalId]] = None,
@@ -579,7 +584,8 @@ object Runtime {
         returnType: Option[String]                        = None,
         documentation: Option[Option[String]]             = None,
         documentationHtml: Option[Option[String]]         = None,
-        scope: Option[Suggestion.Scope]                   = None
+        scope: Option[Suggestion.Scope]                   = None,
+        reexport: Option[Option[String]]                  = None
       ) extends SuggestionAction
           with ToLogString {
 
@@ -588,6 +594,7 @@ object Runtime {
           "Modify(" +
           s"externalId=$externalId," +
           s"artuments=${arguments.map(_.map(_.toLogString(shouldMask)))}," +
+          s"returnType=$returnType" +
           s"documentation=" +
           (if (shouldMask) documentation.map(_.map(_ => STUB))
            else documentation) +
@@ -595,6 +602,7 @@ object Runtime {
           (if (shouldMask) documentationHtml.map(_.map(_ => STUB))
            else documentationHtml) +
           s",scope=$scope" +
+          s"reexport=$reexport" +
           ")"
       }
     }
@@ -619,6 +627,30 @@ object Runtime {
       case class Clean(module: String) extends SuggestionsDatabaseAction
     }
 
+    case class ExportsUpdate(
+      exports: ModuleExports,
+      action: ExportsAction
+    )
+
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+    @JsonSubTypes(
+      Array(
+        new JsonSubTypes.Type(
+          value = classOf[ExportsAction.Add],
+          name  = "exportsActionAdd"
+        ),
+        new JsonSubTypes.Type(
+          value = classOf[ExportsAction.Remove],
+          name  = "exportsActionRemove"
+        )
+      )
+    )
+    sealed trait ExportsAction
+    object ExportsAction {
+      case class Add()    extends ExportsAction
+      case class Remove() extends ExportsAction
+    }
+
     /** A suggestion update.
       *
       * @param suggestion the original suggestion
@@ -631,7 +663,7 @@ object Runtime {
 
       /** @inheritdoc */
       override def toLogString(shouldMask: Boolean): String =
-        "SuggestionUpdate(" +
+        "SuggestionUpdate(suggestion=" +
         suggestion.toLogString(shouldMask) +
         s",action=${action.toLogString(shouldMask)})"
     }
@@ -1104,12 +1136,10 @@ object Runtime {
       *
       * @param path the file being moved to memory.
       * @param contents the current file contents.
-      * @param isIndexed the flag specifying whether the file is indexed
       */
     case class OpenFileNotification(
       path: File,
-      contents: String,
-      isIndexed: Boolean
+      contents: String
     ) extends ApiRequest
         with ToLogString {
 
@@ -1118,7 +1148,6 @@ object Runtime {
         "OpenFileNotification(" +
         s"path=${MaskedPath(path.toPath).toLogString(shouldMask)}," +
         s"contents=${MaskedString(contents).toLogString(shouldMask)}," +
-        s"isIndexed=$isIndexed" +
         ")"
     }
 
@@ -1260,15 +1289,17 @@ object Runtime {
 
     /** A notification about the changes in the suggestions database.
       *
-      * @param file the module file path
+      * @param module the module name
       * @param version the version of the module
       * @param actions the list of actions to apply to the suggestions database
+      * @param exports the list of re-exported symbols
       * @param updates the list of suggestions extracted from module
       */
     case class SuggestionsDatabaseModuleUpdateNotification(
-      file: File,
+      module: String,
       version: ContentVersion,
       actions: Vector[SuggestionsDatabaseAction],
+      exports: Seq[ExportsUpdate],
       updates: Tree[SuggestionUpdate]
     ) extends ApiNotification
         with ToLogString {
@@ -1276,9 +1307,10 @@ object Runtime {
       /** @inheritdoc */
       override def toLogString(shouldMask: Boolean): String =
         "SuggestionsDatabaseModuleUpdateNotification(" +
-        s"file=${MaskedPath(file.toPath).toLogString(shouldMask)}," +
+        s"module=$module," +
         s"version=$version," +
         s"actions=$actions," +
+        s"exports=$exports" +
         s"updates=${updates.map(_.toLogString(shouldMask))}" +
         ")"
     }
@@ -1352,6 +1384,40 @@ object Runtime {
       version: String,
       location: File
     ) extends ApiNotification
+
+    /** A notification containing updates on the progress of long-running tasks.
+      *
+      * @param payload the actual update contained within this notification
+      */
+    case class ProgressNotification(
+      payload: ProgressNotification.NotificationType
+    ) extends ApiNotification
+
+    object ProgressNotification {
+      sealed trait NotificationType
+
+      /** Indicates that a new task has been started. */
+      case class TaskStarted(
+        taskId: UUID,
+        relatedOperation: String,
+        unit: String,
+        total: Option[Long]
+      ) extends NotificationType
+
+      /** Indicates that the task has progressed. */
+      case class TaskProgressUpdate(
+        taskId: UUID,
+        message: Option[String],
+        done: Long
+      ) extends NotificationType
+
+      /** Indicates that the task has been finished. */
+      case class TaskFinished(
+        taskId: UUID,
+        message: Option[String],
+        success: Boolean
+      ) extends NotificationType
+    }
 
     private lazy val mapper = {
       val factory = new CBORFactory()

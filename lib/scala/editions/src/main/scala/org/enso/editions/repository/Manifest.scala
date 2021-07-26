@@ -19,4 +19,9 @@ object Manifest {
       editions <- json.get[Seq[EditionName]](Fields.editions)
     } yield Manifest(editions)
   }
+
+  /** The name of the manifest file that should be present at the root of
+    * editions repository.
+    */
+  val filename = "manifest.yaml"
 }

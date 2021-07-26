@@ -4,7 +4,8 @@ import nl.gn0s1s.bump.SemVer
 import org.enso.distribution.{
   DistributionManager,
   Environment,
-  PortableDistributionManager
+  PortableDistributionManager,
+  TemporaryDirectoryManager
 }
 import org.enso.pkg.{Config, PackageManager}
 import org.enso.runtimeversionmanager.components.{
@@ -13,9 +14,9 @@ import org.enso.runtimeversionmanager.components.{
   RuntimeVersionManagementUserInterface,
   RuntimeVersionManager
 }
-import org.enso.runtimeversionmanager.distribution.TemporaryDirectoryManager
 import org.enso.runtimeversionmanager.releases.engine.EngineReleaseProvider
 import org.enso.runtimeversionmanager.releases.graalvm.GraalVMRuntimeReleaseProvider
+import org.enso.testkit.WithTemporaryDirectory
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -53,7 +54,7 @@ class RuntimeVersionManagerTest
 
     val resourceManager = TestLocalResourceManager.create()
     val temporaryDirectoryManager =
-      new TemporaryDirectoryManager(distributionManager, resourceManager)
+      TemporaryDirectoryManager(distributionManager, resourceManager)
     val componentConfig = new GraalVMComponentConfiguration
 
     val runtimeVersionManager = new RuntimeVersionManager(

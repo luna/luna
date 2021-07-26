@@ -100,10 +100,13 @@ The documentation syntax is broken down into the following elements.
 ### Tags
 
 Tags allow users to annotate their construct with information about its usage
-state. The documentation syntax supports the following tags:
+state. Tags may only appear _once_ in a documentation block unless otherwise
+noted. The documentation syntax supports the following tags:
 
 - `ADDED`: Used to describe when a given construct was added to the library.
 - `ADVANCED`: Items that are _not_ private, but are for power users.
+- `ALIAS`: A name under which the documented entity will display in the
+  searcher. This tag may occur _multiple times_ to provide multiple aliases.
 - `DEPRECATED`: Used for constructs that should no longer be used and that may
   be removed in the future.
 - `MODIFIED`: Used for constructs that have had their behaviour change after a

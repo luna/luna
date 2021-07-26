@@ -1,0 +1,19 @@
+from Standard.Base import all
+
+## An enumeration of different line ending styles.
+type Line_Ending_Style
+    ## Unix-style endings. Used, among others, on Linux and modern MacOS.
+       The text equivalent is `'\n'`.
+    type Unix
+    ## Windows-style endings. The text equivalent is `'\r\n'`.
+    type Windows
+    ## Legacy MacOS endings. Only used on very old Mac systems.
+       The text equivalent is `'\r\n'`.
+    type Mac_Legacy
+
+    ## Returns the text equivalent of the line ending.
+    to_text : Text
+    to_text = case this of
+        Unix -> '\n'
+        Windows -> '\r\n'
+        Mac_Legacy -> '\r'

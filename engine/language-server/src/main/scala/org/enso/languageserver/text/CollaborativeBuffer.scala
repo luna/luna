@@ -1,7 +1,6 @@
 package org.enso.languageserver.text
 
 import akka.actor.{Actor, ActorRef, Cancellable, Props, Stash}
-import akka.pattern.pipe
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.enso.languageserver.capability.CapabilityProtocol._
@@ -26,19 +25,16 @@ import org.enso.languageserver.text.CollaborativeBuffer.IOTimeout
 import org.enso.languageserver.text.TextProtocol._
 import org.enso.languageserver.util.UnhandledLogging
 import org.enso.polyglot.runtime.Runtime.Api
-import org.enso.searcher.FileVersionsRepo
 import org.enso.text.{ContentBasedVersioning, ContentVersion}
 import org.enso.text.editing._
 import org.enso.text.editing.model.TextEdit
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 /** An actor enabling multiple users edit collaboratively a file.
   *
   * @param bufferPath a path to a file
-  * @param versionsRepo a repo containing versions of indexed files
   * @param fileManager a file manger actor
   * @param runtimeConnector a gateway to the runtime
   * @param timeout a request timeout
@@ -46,7 +42,6 @@ import scala.language.postfixOps
   */
 class CollaborativeBuffer(
   bufferPath: Path,
-  versionsRepo: FileVersionsRepo[Future],
   fileManager: ActorRef,
   runtimeConnector: ActorRef,
   timeout: FiniteDuration
@@ -304,17 +299,9 @@ class CollaborativeBuffer(
     originalSender ! OpenFileResponse(
       Right(OpenFileResult(buffer, Some(cap)))
     )
-    val currentVersion = versionCalculator.evalVersion(file.content)
-    versionsRepo
-      .setVersion(file.path, currentVersion.toDigest)
-      .map { prevDigestOpt =>
-        val prevVersionOpt = prevDigestOpt.map(ContentVersion(_))
-        val isIndexed      = prevVersionOpt.contains(currentVersion)
-        Api.Request(
-          Api.OpenFileNotification(file.path, file.content, isIndexed)
-        )
-      }
-      .pipeTo(runtimeConnector)
+    runtimeConnector ! Api.Request(
+      Api.OpenFileNotification(file.path, file.content)
+    )
     context.become(
       collaborativeEditing(
         buffer,
@@ -425,7 +412,6 @@ object CollaborativeBuffer {
   /** Creates a configuration object used to create a [[CollaborativeBuffer]]
     *
     * @param bufferPath a path to a file
-    * @param versionsRepo a repo containing versions of indexed files
     * @param fileManager a file manager actor
     * @param runtimeConnector a gateway to the runtime
     * @param timeout a request timeout
@@ -434,7 +420,6 @@ object CollaborativeBuffer {
     */
   def props(
     bufferPath: Path,
-    versionsRepo: FileVersionsRepo[Future],
     fileManager: ActorRef,
     runtimeConnector: ActorRef,
     timeout: FiniteDuration = 10 seconds
@@ -442,7 +427,6 @@ object CollaborativeBuffer {
     Props(
       new CollaborativeBuffer(
         bufferPath,
-        versionsRepo,
         fileManager,
         runtimeConnector,
         timeout

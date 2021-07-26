@@ -365,7 +365,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -473,7 +473,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -575,10 +575,10 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
-    context.send(Api.Request(Api.OpenFileNotification(aFile, aCode, true)))
+    context.send(Api.Request(Api.OpenFileNotification(aFile, aCode)))
     context.receiveNone shouldEqual None
 
     // push main
@@ -661,7 +661,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -720,7 +720,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -779,7 +779,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -840,7 +840,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -901,7 +901,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -969,7 +969,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1067,7 +1067,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1148,7 +1148,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1236,7 +1236,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1434,7 +1434,7 @@ class RuntimeServerTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1627,7 +1627,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1673,7 +1673,7 @@ class RuntimeServerTest
     val mainFile = context.writeMain(code)
 
     // Open the new file
-    context.send(Api.Request(Api.OpenFileNotification(mainFile, code, true)))
+    context.send(Api.Request(Api.OpenFileNotification(mainFile, code)))
     context.receiveNone shouldEqual None
     context.consumeOut shouldEqual List()
 
@@ -1739,7 +1739,7 @@ class RuntimeServerTest
     val mainFile = context.writeMain(code)
 
     // Open the new file
-    context.send(Api.Request(Api.OpenFileNotification(mainFile, code, true)))
+    context.send(Api.Request(Api.OpenFileNotification(mainFile, code)))
     context.receiveNone shouldEqual None
 
     // Push new item on the stack to trigger the re-execution
@@ -1798,7 +1798,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, context.Main.code, true))
+      Api.Request(Api.OpenFileNotification(mainFile, context.Main.code))
     )
     context.receiveNone shouldEqual None
 
@@ -1874,7 +1874,7 @@ class RuntimeServerTest
     val mainFile = context.writeMain(code)
 
     // Open the new file
-    context.send(Api.Request(Api.OpenFileNotification(mainFile, code, true)))
+    context.send(Api.Request(Api.OpenFileNotification(mainFile, code)))
     context.receiveNone shouldEqual None
     context.consumeOut shouldEqual List()
 
@@ -1951,7 +1951,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1997,7 +1997,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2049,7 +2049,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
 
     context.receiveNone shouldEqual None
@@ -2102,7 +2102,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
 
     context.receiveNone shouldEqual None
@@ -2146,7 +2146,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2197,7 +2197,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2255,7 +2255,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2323,7 +2323,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2399,7 +2399,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2477,7 +2477,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2556,7 +2556,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2650,7 +2650,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2711,7 +2711,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2771,7 +2771,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2835,7 +2835,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2899,7 +2899,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -2959,7 +2959,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -3008,7 +3008,7 @@ class RuntimeServerTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -3055,7 +3055,7 @@ class RuntimeServerTest
     // open file
     context.send(
       Api.Request(
-        Api.OpenFileNotification(mainFile, contents, isIndexed = true)
+        Api.OpenFileNotification(mainFile, contents)
       )
     )
     context.receiveNone shouldEqual None

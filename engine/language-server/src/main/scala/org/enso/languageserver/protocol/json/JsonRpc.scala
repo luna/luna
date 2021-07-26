@@ -1,6 +1,11 @@
 package org.enso.languageserver.protocol.json
 
 import io.circe.generic.auto._
+import org.enso.cli.task.notifications.TaskNotificationApi.{
+  TaskFinished,
+  TaskProgressUpdate,
+  TaskStarted
+}
 import org.enso.jsonrpc.Protocol
 import org.enso.languageserver.capability.CapabilityApi.{
   AcquireCapability,
@@ -17,6 +22,7 @@ import org.enso.languageserver.search.SearchApi._
 import org.enso.languageserver.runtime.VisualisationApi._
 import org.enso.languageserver.session.SessionApi.InitProtocolConnection
 import org.enso.languageserver.text.TextApi._
+import org.enso.languageserver.libraries.LibraryApi._
 import org.enso.languageserver.workspace.WorkspaceApi.ProjectInfo
 
 object JsonRpc {
@@ -65,6 +71,21 @@ object JsonRpc {
     .registerRequest(Import)
     .registerRequest(RenameProject)
     .registerRequest(ProjectInfo)
+    .registerRequest(EditionsListAvailable)
+    .registerRequest(EditionsResolve)
+    .registerRequest(EditionsGetProjectSettings)
+    .registerRequest(EditionsSetParentEdition)
+    .registerRequest(EditionsSetLocalLibrariesPreference)
+    .registerRequest(EditionsListDefinedLibraries)
+    .registerRequest(LibraryListLocal)
+    .registerRequest(LibraryCreate)
+    .registerRequest(LibraryGetMetadata)
+    .registerRequest(LibrarySetMetadata)
+    .registerRequest(LibraryPublish)
+    .registerRequest(LibraryPreinstall)
+    .registerNotification(TaskStarted)
+    .registerNotification(TaskProgressUpdate)
+    .registerNotification(TaskFinished)
     .registerNotification(ForceReleaseCapability)
     .registerNotification(GrantCapability)
     .registerNotification(TextDidChange)

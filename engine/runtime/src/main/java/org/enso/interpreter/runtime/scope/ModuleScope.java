@@ -53,6 +53,11 @@ public class ModuleScope implements TruffleObject {
     return module;
   }
 
+  /** @return the set of modules imported by this module. */
+  public Set<ModuleScope> getImports() {
+    return imports;
+  }
+
   /**
    * Looks up a constructor in the module scope locally.
    *

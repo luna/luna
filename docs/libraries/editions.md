@@ -157,10 +157,17 @@ names, but it can refer to other editions by their names (when extending them).
 These editions are resolved using the logic below:
 
 1. Each `<edition-name>` corresponds to a file `<edition-name>.yaml`.
-2. First, the directory `<ENSO_HOME>/editions` is scanned for a matching edition
-   file.
-3. If none is found above, the directory `$ENSO_DATA_DIRECTORY/editions` is
-   checked.
+2. First, the custom edition search paths are scanned for a matching edition
+   file. These paths can be defined by the `ENSO_EDITION_PATH` environment
+   variable. If it is not defined, it defaults to `<ENSO_HOME>/editions`.
+3. If none is found above, the cached/bundled edition search paths are checked.
+   These consist of the directory `$ENSO_DATA_DIRECTORY/editions`, `editions`
+   directories in installed engines and the `editions` directory in the
+   currently running engine.
+
+By default, downloaded editions are downloaded to
+`$ENSO_DATA_DIRECTORY/editions`, but also editions bundled with any available
+engines can be loaded.
 
 See [The Enso Distribution](../distribution/distribution.md) for definitions of
 the directories.

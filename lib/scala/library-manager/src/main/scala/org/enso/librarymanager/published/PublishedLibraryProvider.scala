@@ -2,7 +2,7 @@ package org.enso.librarymanager.published
 
 import nl.gn0s1s.bump.SemVer
 import org.enso.editions.Editions.Repository
-import org.enso.editions.{LibraryName, LibraryVersion}
+import org.enso.editions.LibraryName
 
 import java.nio.file.Path
 import scala.util.Try
@@ -23,7 +23,6 @@ trait PublishedLibraryProvider {
   def findLibrary(
     libraryName: LibraryName,
     version: SemVer,
-    recommendedRepository: Repository,
-    dependencyResolver: LibraryName => Option[LibraryVersion]
+    recommendedRepository: Repository
   ): Try[Path]
 }

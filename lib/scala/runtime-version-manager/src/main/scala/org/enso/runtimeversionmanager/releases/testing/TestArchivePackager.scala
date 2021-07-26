@@ -1,6 +1,7 @@
 package org.enso.runtimeversionmanager.releases.testing
 
-import org.enso.distribution.{FileSystem, OS}
+import org.enso.cli.OS
+import org.enso.distribution.FileSystem
 
 import java.nio.file.Path
 import scala.sys.process.Process

@@ -51,6 +51,7 @@ class ProjectCreateHandler[F[+_, +_]: Exec: CovariantFlatMap: ErrorChannel](
             s"Could not determine the default version: $error"
           )
         }
+      _ = logger.trace(s"Creating project using engine $actualVersion")
       projectId <- projectService.createUserProject(
         progressTracker        = self,
         name                   = params.name,

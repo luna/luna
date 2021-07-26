@@ -34,6 +34,36 @@ csv = Enso_Project.data / "food_shop_inventory.csv"
 csv_path : Text
 csv_path = here.csv.path
 
+## An example XLS file for experimenting with Table and its APIs.
+
+   ! Downloading
+     Calling this method will result in the spreadsheet file being downloaded
+     from the internet if it is not already present on your disk. If you do not
+     want this to happen, please place the spreadsheet in the
+     `lib/Standard/Examples/0.1.0/data` folder for your Enso distribution.
+xls : File
+xls =
+    url = "https://enso-data-samples.s3.us-west-1.amazonaws.com/spreadsheet.xls"
+    file = Enso_Project.data / 'spreadsheet.xls'
+    if file.exists.not then
+        Http.fetch url . to_file file
+    file
+
+## An example XLSX file for experimenting with Table and its APIs.
+
+   ! Downloading
+     Calling this method will result in the spreadsheet file being downloaded
+     from the internet if it is not already present on your disk. If you do not
+     want this to happen, please place the spreadsheet in the
+     `lib/Standard/Examples/0.1.0/data` folder for your Enso distribution.
+xlsx : File
+xlsx =
+    url = "https://enso-data-samples.s3.us-west-1.amazonaws.com/spreadsheet.xlsx"
+    file = Enso_Project.data / 'spreadsheet.xlsx'
+    if file.exists.not then
+        Http.fetch url . to_file file
+    file
+
 ## A file that is used for writing temporary data as part of tests.
 scratch_file : File
 scratch_file =

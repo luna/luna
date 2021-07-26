@@ -1,0 +1,19 @@
+"brokenbar", "section", "dieresis", "copyright",
+"registered", "copyright", "trademark", "acute",
+'\u00a9',    //copyright
+@param copyright the copyright
+Copyright information associated with the document or resource */
+Returns the profile copyright.
+String copyright = getCopyright(profile);
+byte[] tag = profile.getData(ICC_Profile.icSigCopyrightTag);
+gen.writeDSCComment(DSCConstants.COPYRIGHT, "Copyright 2001-2003,2010 "
+gen.writeDSCComment(DSCConstants.COPYRIGHT, "Copyright 2002-2003 "
+private String copyright;
+private String getCopyright(ICC_Profile profile) throws IOException {
+public NamedColorProfile(String profileName, String copyright, NamedColorSpace[] namedColors,
+public String getCopyright() {
+public static final String COPYRIGHT         = "Copyright";
+return new NamedColorProfile(profileDescription, copyright, ncs, intent);
+return this.copyright;
+this work for additional information regarding copyright ownership.
+this.copyright = copyright;

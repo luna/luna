@@ -45,3 +45,5 @@ The protocol messages are broken up into documents as follows:
   The messages and types pertaining to the project manager component.
 - [**Language Server Message Specification:**](./protocol-language-server.md)
   The messages and types pertaining to the language server component.
+- [**Language Server Http Endpoints Specification**](./language-server-http-endoints.md)
+  Specification of the Language Server Http endpoints.

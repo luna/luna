@@ -2,6 +2,7 @@ package org.enso.distribution
 
 import com.typesafe.scalalogging.Logger
 import org.apache.commons.io.FileUtils
+import org.enso.cli.OS
 
 import java.io.PrintWriter
 import java.nio.file.attribute.PosixFilePermissions

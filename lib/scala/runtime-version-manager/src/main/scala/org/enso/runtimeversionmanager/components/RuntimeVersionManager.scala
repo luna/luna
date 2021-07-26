@@ -3,13 +3,17 @@ package org.enso.runtimeversionmanager.components
 import java.nio.file.{Files, Path, StandardOpenOption}
 import com.typesafe.scalalogging.Logger
 import nl.gn0s1s.bump.SemVer
-import org.enso.distribution.{DistributionManager, FileSystem, OS}
+import org.enso.cli.OS
+import org.enso.distribution.{
+  DistributionManager,
+  FileSystem,
+  TemporaryDirectoryManager
+}
 import org.enso.distribution.locking.{LockType, ResourceManager}
 import org.enso.runtimeversionmanager.CurrentVersion
 import org.enso.distribution.FileSystem.PathSyntax
 import org.enso.logger.masking.MaskedPath
-import org.enso.runtimeversionmanager.archive.Archive
-import org.enso.runtimeversionmanager.distribution.TemporaryDirectoryManager
+import org.enso.downloader.archive.Archive
 import org.enso.runtimeversionmanager.locking.Resources
 import org.enso.runtimeversionmanager.releases.ReleaseProvider
 import org.enso.runtimeversionmanager.releases.engine.EngineRelease
@@ -429,9 +433,9 @@ class RuntimeVersionManager(
         )
       }
     }
-    FileSystem.withTemporaryDirectory("enso-install") { directory =>
-      logger.debug("Downloading packages to [{}].", directory)
-      val enginePackage = directory / engineRelease.packageFileName
+    FileSystem.withTemporaryDirectory("enso-install") { globalTmpDirectory =>
+      logger.debug("Downloading packages to [{}].", globalTmpDirectory)
+      val enginePackage = globalTmpDirectory / engineRelease.packageFileName
       val downloadTask  = engineRelease.downloadPackage(enginePackage)
       userInterface.trackProgress(
         s"Downloading ${enginePackage.getFileName}.",
@@ -442,18 +446,19 @@ class RuntimeVersionManager(
       val engineDirectoryName =
         engineDirectoryNameForVersion(engineRelease.version)
 
+      val localTmpDirectory =
+        temporaryDirectoryManager.temporarySubdirectory(s"engine-$version")
+
       val extractionTask = Archive
         .extractArchive(
           enginePackage,
-          temporaryDirectoryManager.accessTemporaryDirectory(),
+          localTmpDirectory,
           Some(engineDirectoryName)
         )
       userInterface.trackProgress("Extracting the engine.", extractionTask)
       extractionTask.force()
 
-      val engineTemporaryPath =
-        temporaryDirectoryManager
-          .accessTemporaryDirectory() / engineDirectoryName
+      val engineTemporaryPath = localTmpDirectory / engineDirectoryName
       def undoTemporaryEngine(): Unit = {
         if (Files.exists(engineTemporaryPath)) {
           FileSystem.removeDirectory(engineTemporaryPath)
@@ -694,19 +699,21 @@ class RuntimeVersionManager(
       downloadTask.force()
 
       val runtimeDirectoryName = graalDirectoryForVersion(runtimeVersion)
+      val localTmpDirectory =
+        temporaryDirectoryManager.temporarySubdirectory(
+          s"runtime-${runtimeVersion.graalVersion}-java${runtimeVersion.java}"
+        )
 
       val extractionTask = Archive.extractArchive(
         runtimePackage,
-        temporaryDirectoryManager.accessTemporaryDirectory(),
+        localTmpDirectory,
         Some(runtimeDirectoryName)
       )
       logger.debug("Extracting [{}].", runtimePackage)
       userInterface.trackProgress("Extracting the runtime.", extractionTask)
       extractionTask.force()
 
-      val runtimeTemporaryPath =
-        temporaryDirectoryManager
-          .accessTemporaryDirectory() / runtimeDirectoryName
+      val runtimeTemporaryPath = localTmpDirectory / runtimeDirectoryName
 
       def undoTemporaryRuntime(): Unit = {
         if (Files.exists(runtimeTemporaryPath)) {
@@ -842,8 +849,8 @@ class RuntimeVersionManager(
     */
   private def safelyRemoveComponent(path: Path): Unit = {
     val temporaryPath =
-      temporaryDirectoryManager.accessTemporaryDirectory() / path.getFileName
-    FileSystem.atomicMove(path, temporaryPath)
+      temporaryDirectoryManager.temporarySubdirectory(path.getFileName.toString)
+    FileSystem.atomicMove(path, temporaryPath / "tmp")
     FileSystem.removeDirectory(temporaryPath)
   }
 

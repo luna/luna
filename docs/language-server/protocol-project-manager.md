@@ -101,8 +101,11 @@ interface ProjectMetadata {
   /**
    * Enso Engine version to use for the project, represented by a semver version
    * string.
+   *
+   * If the edition associated with the project could not be resolved, the
+   * engine version may be missing.
    */
-  engineVersion: String;
+  engineVersion?: String;
 
   /**
    * The last opened datetime.

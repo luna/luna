@@ -2,6 +2,7 @@ package org.enso.compiler
 
 import com.oracle.truffle.api.TruffleFile
 import com.typesafe.scalalogging.Logger
+import org.enso.distribution.locking.ResourceManager
 import org.enso.distribution.{DistributionManager, EditionManager, LanguageHome}
 import org.enso.editions.{DefaultEdition, LibraryName, LibraryVersion}
 import org.enso.interpreter.instrument.NotificationHandler
@@ -57,11 +58,6 @@ trait PackageRepository {
 
   /** Modifies package and module names to reflect the project name change. */
   def renameProject(namespace: String, oldName: String, newName: String): Unit
-
-  /** This is a temporary workaround that should be removed once we get
-    * integrated with the editions.
-    */
-  def registerForPreload(packages: Seq[Package[TruffleFile]]): Unit
 }
 
 object PackageRepository {
@@ -72,7 +68,7 @@ object PackageRepository {
   object Error {
 
     /** Indicates that a resolution error has happened, for example the package
-      *  was not defined in the selected edition.
+      * was not defined in the selected edition.
       */
     case class PackageCouldNotBeResolved(cause: Throwable) extends Error {
       override def toString: String =
@@ -100,11 +96,11 @@ object PackageRepository {
 
   /** The default [[PackageRepository]] implementation.
     *
-    * @param libraryProvider the [[ResolvingLibraryProvider]] which resolves
-    *                        which library version should be imported and
-    *                        locates them (or downloads if they are missing)
-    * @param context the language context
-    * @param builtins the builtins module
+    * @param libraryProvider     the [[ResolvingLibraryProvider]] which resolves
+    *                            which library version should be imported and
+    *                            locates them (or downloads if they are missing)
+    * @param context             the language context
+    * @param builtins            the builtins module
     * @param notificationHandler a notification handler
     */
   class Default(
@@ -198,22 +194,19 @@ object PackageRepository {
     /** @inheritdoc */
     override def ensurePackageIsLoaded(
       libraryName: LibraryName
-    ): Either[Error, Unit] = {
-      runPreload()
+    ): Either[Error, Unit] =
       if (loadedPackages.contains(libraryName)) Right(())
       else {
         logger.trace(s"Resolving library $libraryName.")
         val resolvedLibrary = libraryProvider.findLibrary(libraryName)
-        logger.whenTraceEnabled {
-          resolvedLibrary match {
-            case Left(error) =>
-              logger.trace(s"Resolution failed with [$error].")
-            case Right(resolved) =>
-              logger.trace(
-                s"Found library ${resolved.name} @ ${resolved.version} " +
-                s"at [${MaskedPath(resolved.location).applyMasking()}]."
-              )
-          }
+        resolvedLibrary match {
+          case Left(error) =>
+            logger.error(s"Resolution failed with [$error].", error)
+          case Right(resolved) =>
+            logger.trace(
+              s"Found library ${resolved.name} @ ${resolved.version} " +
+              s"at [${MaskedPath(resolved.location).applyMasking()}]."
+            )
         }
 
         this.synchronized {
@@ -239,25 +232,18 @@ object PackageRepository {
               }
         }
       }
-    }
 
     /** @inheritdoc */
-    override def getLoadedModules(): Seq[Module] = {
-      runPreload()
+    override def getLoadedModules(): Seq[Module] =
       loadedModules.values.toSeq
-    }
 
     /** @inheritdoc */
-    override def getLoadedPackages(): Seq[Package[TruffleFile]] = {
-      runPreload()
+    override def getLoadedPackages(): Seq[Package[TruffleFile]] =
       loadedPackages.values.toSeq.flatten
-    }
 
     /** @inheritdoc */
-    override def getLoadedModule(qualifiedName: String): Option[Module] = {
-      runPreload()
+    override def getLoadedModule(qualifiedName: String): Option[Module] =
       loadedModules.get(qualifiedName)
-    }
 
     /** @inheritdoc */
     override def registerModuleCreatedInRuntime(module: Module): Unit =
@@ -317,24 +303,6 @@ object PackageRepository {
         loadedModules.put(module.getName.toString, module)
       }
     }
-
-    /** Temporary workaround, will be removed once editions are integrated. */
-    private var toPreload: List[Package[TruffleFile]] = Nil
-    private def runPreload(): Unit = {
-      for (pkg <- toPreload) {
-        registerPackageInternal(
-          libraryName    = pkg.libraryName,
-          pkg            = pkg,
-          libraryVersion = LibraryVersion.Local,
-          isLibrary      = true
-        )
-      }
-      toPreload = Nil
-    }
-
-    /** @inheritdoc */
-    override def registerForPreload(packages: Seq[Package[TruffleFile]]): Unit =
-      toPreload ++= packages
   }
 
   /** Creates a [[PackageRepository]] for the run.
@@ -346,12 +314,13 @@ object PackageRepository {
     * Edition and library search paths are based on the distribution and
     * language home (if it is provided).
     *
-    * @param projectPackage the package of the current project (if ran inside of a project)
-    * @param languageHome the language home (if set)
+    * @param projectPackage      the package of the current project (if ran inside of a project)
+    * @param languageHome        the language home (if set)
     * @param distributionManager the distribution manager
-    * @param context the context reference, needed to add polyglot libraries to
-    *                the classpath
-    * @param builtins the builtins that are always preloaded
+    * @param resourceManager     the resource manager instance
+    * @param context             the context reference, needed to add polyglot libraries to
+    *                            the classpath
+    * @param builtins            the builtins that are always preloaded
     * @param notificationHandler a handler for library addition and progress
     *                            notifications
     * @return an initialized [[PackageRepository]]
@@ -360,6 +329,7 @@ object PackageRepository {
     projectPackage: Option[Package[TruffleFile]],
     languageHome: Option[String],
     distributionManager: DistributionManager,
+    resourceManager: ResourceManager,
     context: Context,
     builtins: Builtins,
     notificationHandler: NotificationHandler
@@ -368,16 +338,16 @@ object PackageRepository {
       .flatMap(_.config.edition)
       .getOrElse(DefaultEdition.getDefaultEdition)
 
-    val homeManager = languageHome.map { home => LanguageHome(Path.of(home)) }
-    val editionSearchPaths =
-      homeManager.map(_.editions).toList ++
-      distributionManager.paths.editionSearchPaths
-    val editionManager = new EditionManager(editionSearchPaths)
+    val homeManager    = languageHome.map { home => LanguageHome(Path.of(home)) }
+    val editionManager = EditionManager(distributionManager, homeManager)
     val edition        = editionManager.resolveEdition(rawEdition).get
 
     val resolvingLibraryProvider =
       new DefaultLibraryProvider(
         distributionManager = distributionManager,
+        resourceManager     = resourceManager,
+        lockUserInterface   = notificationHandler,
+        progressReporter    = notificationHandler,
         languageHome        = homeManager,
         edition             = edition,
         preferLocalLibraries =

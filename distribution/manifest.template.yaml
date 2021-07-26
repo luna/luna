@@ -1,5 +1,5 @@
-minimum-launcher-version: 0.2.4-SNAPSHOT
-minimum-project-manager-version: 0.2.4-SNAPSHOT
+minimum-launcher-version: 0.2.13
+minimum-project-manager-version: 0.2.13
 jvm-options:
   - value: "-Dpolyglot.engine.IterativePartialEscape=true"
   - value: "-Dtruffle.class.path.append=$enginePackagePath\\component\\runtime.jar"

@@ -1,6 +1,9 @@
 package org.enso.launcher.distribution
 
-import org.enso.distribution.PortableDistributionManager
+import org.enso.distribution.{
+  PortableDistributionManager,
+  TemporaryDirectoryManager
+}
 import org.enso.distribution.locking.{
   ResourceManager,
   ThreadSafeFileLockManager
@@ -16,7 +19,6 @@ import org.enso.runtimeversionmanager.components.{
   RuntimeComponentUpdaterFactory,
   RuntimeVersionManager
 }
-import org.enso.runtimeversionmanager.distribution.TemporaryDirectoryManager
 import org.enso.runtimeversionmanager.releases.engine.EngineRepository
 import org.enso.runtimeversionmanager.releases.graalvm.GraalCEReleaseProvider
 
@@ -42,7 +44,7 @@ object DefaultManagers {
 
   /** Default [[TemporaryDirectoryManager]]. */
   lazy val temporaryDirectoryManager =
-    new TemporaryDirectoryManager(distributionManager, defaultResourceManager)
+    TemporaryDirectoryManager(distributionManager, defaultResourceManager)
 
   /** Default [[RuntimeComponentConfiguration]]. */
   lazy val componentConfig: RuntimeComponentConfiguration =

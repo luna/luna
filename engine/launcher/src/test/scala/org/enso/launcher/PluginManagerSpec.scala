@@ -1,8 +1,8 @@
 package org.enso.launcher
 
-import java.nio.file.{Files, Path}
+import org.enso.testkit.WithTemporaryDirectory
 
-import org.enso.runtimeversionmanager.test.WithTemporaryDirectory
+import java.nio.file.{Files, Path}
 import org.scalatest.OptionValues
 
 import scala.jdk.CollectionConverters._

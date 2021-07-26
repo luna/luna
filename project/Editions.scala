@@ -23,8 +23,15 @@ object Editions {
   ): Unit = {
     val editions = file("distribution") / "editions"
     IO.createDirectory(editions)
-
     val edition = editions / (editionName + ".yaml")
+
+    for (file <- IO.listFiles(editions)) {
+      if (file.getName != edition.getName) {
+        IO.delete(file)
+        log.warn(s"Removed spurious file in editions directory: $file")
+      }
+    }
+
     if (!edition.exists()) {
       val librariesConfigs = standardLibraries.map { libName =>
         s"""  - name: $libName

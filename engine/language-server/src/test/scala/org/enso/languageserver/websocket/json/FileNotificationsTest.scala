@@ -88,7 +88,7 @@ class FileNotificationsTest extends BaseServerTest with FlakySpec {
       // 4
       runtimeConnectorProbe.expectMsg(
         Api.Request(
-          Api.OpenFileNotification(file("foo.txt"), "123456789", false)
+          Api.OpenFileNotification(file("foo.txt"), "123456789")
         )
       )
 

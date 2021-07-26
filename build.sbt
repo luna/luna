@@ -18,8 +18,8 @@ val scalacVersion  = "2.13.6"
 val rustVersion    = "1.54.0-nightly"
 val graalVersion   = "21.1.0"
 val javaVersion    = "11"
-val ensoVersion    = "0.2.14-SNAPSHOT" // Note [Engine And Launcher Version]
-val currentEdition = "2021.1"          // Note [Default Editions]
+val ensoVersion    = "0.2.17-SNAPSHOT" // Note [Engine And Launcher Version]
+val currentEdition = "2021.5-SNAPSHOT" // Note [Default Editions]
 val stdLibVersion  = "0.1.0"           // Note [Standard Library Version]
 
 /* Note [Engine And Launcher Version]
@@ -233,16 +233,25 @@ lazy val enso = (project in file("."))
     logger.jvm,
     pkg,
     cli,
+    `task-progress-notifications`,
     `logging-utils`,
     `logging-service`,
+    `logging-truffle-connector`,
+    `locking-test-helper`,
     `akka-native`,
     `version-output`,
     `engine-runner`,
     runtime,
     searcher,
     launcher,
+    downloader,
     `runtime-version-manager`,
     `runtime-version-manager-test`,
+    editions,
+    `distribution-manager`,
+    `edition-updater`,
+    `library-manager`,
+    `library-manager-test`,
     syntax.jvm,
     testkit
   )
@@ -424,7 +433,7 @@ val scalatestVersion        = "3.3.0-SNAP2"
 val shapelessVersion        = "2.4.0-M1"
 val slf4jVersion            = "1.7.30"
 val slickVersion            = "3.3.2"
-val sqliteVersion           = "3.31.1"
+val sqliteVersion           = "3.36.0.1"
 val tikaVersion             = "1.24.1"
 val typesafeConfigVersion   = "1.4.1"
 
@@ -706,12 +715,27 @@ lazy val cli = project
   .configs(Test)
   .settings(
     version := "0.1",
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % scalatestVersion % Test,
-      "org.typelevel" %% "cats-core" % catsVersion
+    libraryDependencies ++= circe ++ Seq(
+      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion,
+      "org.scalatest"              %% "scalatest"     % scalatestVersion % Test,
+      "org.typelevel"              %% "cats-core"     % catsVersion
     ),
     Test / parallelExecution := false
   )
+
+lazy val `task-progress-notifications` = project
+  .in(file("lib/scala/task-progress-notifications"))
+  .configs(Test)
+  .settings(
+    version := "0.1",
+    libraryDependencies ++= Seq(
+      "com.beachape"  %% "enumeratum-circe" % enumeratumCirceVersion,
+      "org.scalatest" %% "scalatest"        % scalatestVersion % Test
+    ),
+    Test / parallelExecution := false
+  )
+  .dependsOn(cli)
+  .dependsOn(`json-rpc-server`)
 
 lazy val `version-output` = (project in file("lib/scala/version-output"))
   .settings(
@@ -795,6 +819,7 @@ lazy val `project-manager` = (project in file("lib/scala/project-manager"))
   .dependsOn(`version-output`)
   .dependsOn(editions)
   .dependsOn(cli)
+  .dependsOn(`task-progress-notifications`)
   .dependsOn(`polyglot-api`)
   .dependsOn(`runtime-version-manager`)
   .dependsOn(`library-manager`)
@@ -856,6 +881,7 @@ lazy val testkit = project
   .settings(
     libraryDependencies ++= Seq(
       "org.apache.commons" % "commons-lang3" % commonsLangVersion,
+      "commons-io"         % "commons-io"    % commonsIoVersion,
       "org.scalatest"     %% "scalatest"     % scalatestVersion
     )
   )
@@ -974,6 +1000,7 @@ lazy val `language-server` = (project in file("engine/language-server"))
     ),
     Test / testOptions += Tests
       .Argument(TestFrameworks.ScalaCheck, "-minSuccessfulTests", "1000"),
+    Test / envVars ++= distributionEnvironmentOverrides,
     GenerateFlatbuffers.flatcVersion := flatbuffersVersion,
     Compile / sourceGenerators += GenerateFlatbuffers.task
   )
@@ -988,6 +1015,8 @@ lazy val `language-server` = (project in file("engine/language-server"))
   )
   .dependsOn(`json-rpc-server-test` % Test)
   .dependsOn(`json-rpc-server`)
+  .dependsOn(`task-progress-notifications`)
+  .dependsOn(`library-manager`)
   .dependsOn(`logging-service`)
   .dependsOn(`polyglot-api`)
   .dependsOn(`searcher`)
@@ -995,6 +1024,8 @@ lazy val `language-server` = (project in file("engine/language-server"))
   .dependsOn(`version-output`)
   .dependsOn(pkg)
   .dependsOn(testkit % Test)
+  .dependsOn(`library-manager-test` % Test)
+  .dependsOn(`runtime-version-manager-test` % Test)
 
 lazy val ast = (project in file("lib/scala/ast"))
   .settings(
@@ -1149,22 +1180,6 @@ lazy val runtime = (project in file("engine/runtime"))
       case _ => MergeStrategy.first
     }
   )
-  .settings(
-    (Compile / compile) := (Compile / compile)
-      .dependsOn(
-        Def.task {
-          Editions.writeEditionConfig(
-            ensoVersion = ensoVersion,
-            editionName = currentEdition,
-            libraryVersion =
-              "0.1.0", // TODO [RW] Once we start releasing the standard libraries, this will be synced with engine version.
-            log = streams.value.log
-          )
-        }
-      )
-      .value,
-    cleanFiles += baseDirectory.value / ".." / ".." / "distribution" / "editions"
-  )
   .dependsOn(pkg)
   .dependsOn(`interpreter-dsl`)
   .dependsOn(syntax.jvm)
@@ -1241,6 +1256,7 @@ lazy val `engine-runner` = project
   )
   .dependsOn(`version-output`)
   .dependsOn(pkg)
+  .dependsOn(cli)
   .dependsOn(`library-manager`)
   .dependsOn(`language-server`)
   .dependsOn(`polyglot-api`)
@@ -1314,6 +1330,7 @@ lazy val `distribution-manager` = project
     )
   )
   .dependsOn(editions)
+  .dependsOn(cli)
   .dependsOn(pkg)
   .dependsOn(`logging-utils`)
 
@@ -1329,13 +1346,56 @@ lazy val editions = project
       "org.scalatest"              %% "scalatest"     % scalatestVersion % Test
     )
   )
+  .settings(
+    (Compile / compile) := (Compile / compile)
+      .dependsOn(
+        Def.task {
+          Editions.writeEditionConfig(
+            ensoVersion = ensoVersion,
+            editionName = currentEdition,
+            libraryVersion =
+              "0.1.0", // TODO [RW] Once we start releasing the standard libraries, this will be synced with engine version.
+            log = streams.value.log
+          )
+        }
+      )
+      .value,
+    cleanFiles += baseDirectory.value / ".." / ".." / "distribution" / "editions"
+  )
   .dependsOn(testkit % Test)
+
+lazy val downloader = (project in file("lib/scala/downloader"))
+  .settings(
+    version := "0.1",
+    libraryDependencies ++= circe ++ Seq(
+      "com.typesafe.scala-logging" %% "scala-logging"    % scalaLoggingVersion,
+      "commons-io"                  % "commons-io"       % commonsIoVersion,
+      "org.apache.commons"          % "commons-compress" % commonsCompressVersion,
+      "org.scalatest"              %% "scalatest"        % scalatestVersion % Test,
+      akkaActor,
+      akkaStream,
+      akkaHttp,
+      akkaSLF4J
+    )
+  )
+  .dependsOn(cli)
+
+lazy val `edition-updater` = project
+  .in(file("lib/scala/edition-updater"))
+  .configs(Test)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion,
+      "org.scalatest"              %% "scalatest"     % scalatestVersion % Test
+    )
+  )
+  .dependsOn(editions)
+  .dependsOn(downloader)
 
 lazy val `library-manager` = project
   .in(file("lib/scala/library-manager"))
   .configs(Test)
   .settings(
-    resolvers += Resolver.bintrayRepo("gn0s1s", "releases"),
     libraryDependencies ++= Seq(
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion,
       "org.scalatest"              %% "scalatest"     % scalatestVersion % Test
@@ -1345,7 +1405,22 @@ lazy val `library-manager` = project
   .dependsOn(editions)
   .dependsOn(cli)
   .dependsOn(`distribution-manager`)
+  .dependsOn(downloader)
   .dependsOn(testkit % Test)
+  .dependsOn(`logging-service` % Test)
+
+lazy val `library-manager-test` = project
+  .in(file("lib/scala/library-manager-test"))
+  .configs(Test)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingVersion,
+      "org.scalatest"              %% "scalatest"     % scalatestVersion % Test
+    )
+  )
+  .dependsOn(`library-manager`)
+  .dependsOn(testkit)
+  .dependsOn(`logging-service`)
 
 lazy val `runtime-version-manager` = project
   .in(file("lib/scala/runtime-version-manager"))
@@ -1362,6 +1437,7 @@ lazy val `runtime-version-manager` = project
     )
   )
   .dependsOn(pkg)
+  .dependsOn(downloader)
   .dependsOn(`logging-service`)
   .dependsOn(cli)
   .dependsOn(`version-output`)
@@ -1434,7 +1510,10 @@ lazy val `std-table` = project
     Compile / packageBin / artifactPath :=
       `table-polyglot-root` / "std-table.jar",
     libraryDependencies ++= Seq(
-      "com.univocity" % "univocity-parsers" % "2.9.0"
+      "com.univocity"       % "univocity-parsers" % "2.9.0",
+      "org.graalvm.sdk"     % "graal-sdk"         % graalVersion % "provided",
+      "org.apache.poi"      % "poi-ooxml"         % "5.0.0",
+      "org.apache.xmlbeans" % "xmlbeans"          % "5.0.1"
     ),
     Compile / packageBin := Def.task {
       val result = (Compile / packageBin).value
@@ -1442,7 +1521,8 @@ lazy val `std-table` = project
         .copyDependencies(
           `table-polyglot-root`,
           Some("std-table.jar"),
-          ignoreScalaLibrary = true
+          ignoreScalaLibrary = true,
+          unpackedDeps       = Set("xmlbeans")
         )
         .value
       result

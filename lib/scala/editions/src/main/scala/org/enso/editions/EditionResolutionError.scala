@@ -29,7 +29,7 @@ object EditionResolutionError {
     * reference is invalid.
     */
   case class LibraryReferencesUndefinedRepository(
-    libraryName: String,
+    libraryName: LibraryName,
     repositoryName: String
   ) extends EditionResolutionError(
         s"A library `$libraryName` references a repository `$repositoryName` " +

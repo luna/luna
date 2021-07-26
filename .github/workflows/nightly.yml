@@ -31,6 +31,7 @@ jobs:
     outputs:
       proceed: ${{ steps.preparations.outputs.proceed }}
       nightly-version: ${{ steps.preparations.outputs.nightly-version }}
+      nightly-edition: ${{ steps.preparations.outputs.nightly-edition }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -140,12 +141,13 @@ jobs:
         run: |
           echo "ENSO_RELEASE_MODE=true" >> $GITHUB_ENV
           echo "ENSO_VERSION=${{ needs.preflight-check.outputs.nightly-version }}" >> $GITHUB_ENV
+          echo "ENSO_EDITION=${{ needs.preflight-check.outputs.nightly-edition }}" >> $GITHUB_ENV
 
       - name: Update the Version Number to the Nightly
         working-directory: repo
         shell: bash
         run: |
-          node tools/ci/nightly/bump-version.js $ENSO_VERSION
+          node tools/ci/nightly/bump-version.js $ENSO_VERSION $ENSO_EDITION
 
       - name: Bootstrap the Project
         working-directory: repo
@@ -351,13 +353,15 @@ jobs:
         shell: bash
         run: |
           DIST_VERSION=${{ needs.preflight-check.outputs.nightly-version }}
-          echo "Preparing release for $DIST_VERSION"
+          ENSO_EDITION=${{ needs.preflight-check.outputs.nightly-edition }}
+          echo "Preparing release for $DIST_VERSION, edition $ENSO_EDITION"
           echo "DIST_VERSION=$DIST_VERSION" >> $GITHUB_ENV
+          echo "ENSO_EDITION=$ENSO_EDITION" >> $GITHUB_ENV
       - name: Update the Version Number to the Nightly
         working-directory: repo
         shell: bash
         run: |
-          node tools/ci/nightly/bump-version.js $DIST_VERSION
+          node tools/ci/nightly/bump-version.js $DIST_VERSION $ENSO_EDITION
 
       - name: Prepare Packages
         shell: bash

@@ -48,7 +48,7 @@ object EditionSerialization {
   implicit val editionDecoder: Decoder[Raw.Edition] = { json =>
     for {
       parent        <- json.get[Option[EditionName]](Fields.parent)
-      engineVersion <- json.get[Option[EnsoVersion]](Fields.engineVersion)
+      engineVersion <- json.get[Option[SemVer]](Fields.engineVersion)
       _ <-
         if (parent.isEmpty && engineVersion.isEmpty)
           Left(
@@ -64,7 +64,7 @@ object EditionSerialization {
       libraries <- json.getOrElse[Seq[Raw.Library]](Fields.libraries)(Seq())
       res <- {
         val repositoryMap = Map.from(repositories.map(r => (r.name, r)))
-        val libraryMap    = Map.from(libraries.map(l => (l.qualifiedName, l)))
+        val libraryMap    = Map.from(libraries.map(l => (l.name, l)))
         if (libraryMap.size != libraries.size)
           Left(
             DecodingFailure(
@@ -157,7 +157,11 @@ object EditionSerialization {
   }
 
   implicit private val libraryDecoder: Decoder[Raw.Library] = { json =>
-    def makeLibrary(name: String, repository: String, version: Option[SemVer]) =
+    def makeLibrary(
+      name: LibraryName,
+      repository: String,
+      version: Option[SemVer]
+    ) =
       if (repository == Fields.localRepositoryName)
         if (version.isDefined)
           Left(
@@ -181,7 +185,7 @@ object EditionSerialization {
         }
       }
     for {
-      name       <- json.get[String](Fields.name)
+      name       <- json.get[LibraryName](Fields.name)
       repository <- json.get[String](Fields.repository)
       version    <- json.get[Option[SemVer]](Fields.version)
       res        <- makeLibrary(name, repository, version)

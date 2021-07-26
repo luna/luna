@@ -3,7 +3,11 @@ package org.enso.distribution.locking
 import java.nio.file.{Files, Path}
 import nl.gn0s1s.bump.SemVer
 import org.enso.cli.task.TaskProgress
-import org.enso.distribution.{DistributionManager, FileSystem}
+import org.enso.distribution.{
+  DistributionManager,
+  FileSystem,
+  TemporaryDirectoryManager
+}
 import org.enso.distribution.locking.{
   LockManager,
   LockType,
@@ -19,7 +23,6 @@ import org.enso.runtimeversionmanager.components.{
   Manifest,
   RuntimeVersionManager
 }
-import org.enso.runtimeversionmanager.distribution.TemporaryDirectoryManager
 import org.enso.runtimeversionmanager.releases.engine.{
   EngineRelease,
   EngineReleaseProvider
@@ -27,7 +30,7 @@ import org.enso.runtimeversionmanager.releases.engine.{
 import org.enso.runtimeversionmanager.releases.graalvm.GraalCEReleaseProvider
 import org.enso.runtimeversionmanager.releases.testing.FakeReleaseProvider
 import org.enso.runtimeversionmanager.test._
-import org.enso.testkit.{FlakySpec, RetrySpec}
+import org.enso.testkit.{FlakySpec, RetrySpec, WithTemporaryDirectory}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.TimeLimitedTests
 import org.scalatest.matchers.should.Matchers
@@ -149,7 +152,7 @@ class ConcurrencyTest
     }
 
     val temporaryDirectoryManager =
-      new TemporaryDirectoryManager(distributionManager, resourceManager)
+      TemporaryDirectoryManager(distributionManager, resourceManager)
     val componentConfig = new GraalVMComponentConfiguration
     val componentsManager = new RuntimeVersionManager(
       TestRuntimeVersionManagementUserInterface.default,

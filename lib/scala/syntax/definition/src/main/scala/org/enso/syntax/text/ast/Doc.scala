@@ -588,6 +588,7 @@ object Doc {
       object Type {
         case object Added      extends Type
         case object Advanced   extends Type
+        case object Alias      extends Type
         case object Deprecated extends Type
         case object Modified   extends Type
         case object Private    extends Type

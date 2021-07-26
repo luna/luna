@@ -1,11 +1,12 @@
 package org.enso.launcher.installation
 
-import org.enso.distribution.{FileSystem, OS}
+import org.enso.distribution.FileSystem
 
 import java.nio.file.{Files, Path}
 import FileSystem.PathSyntax
-import org.enso.runtimeversionmanager.test.WithTemporaryDirectory
+import org.enso.cli.OS
 import org.enso.launcher._
+import org.enso.testkit.WithTemporaryDirectory
 
 class InstallerSpec extends NativeTest with WithTemporaryDirectory {
   def portableRoot = getTestDirectory / "portable"

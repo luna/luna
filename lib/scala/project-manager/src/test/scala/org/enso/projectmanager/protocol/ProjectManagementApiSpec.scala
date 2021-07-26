@@ -1,9 +1,5 @@
 package org.enso.projectmanager.protocol
 
-import java.io.File
-import java.nio.file.Paths
-import java.util.UUID
-
 import io.circe.literal._
 import nl.gn0s1s.bump.SemVer
 import org.apache.commons.io.FileUtils
@@ -11,6 +7,9 @@ import org.enso.editions.SemVerJson._
 import org.enso.projectmanager.{BaseServerSpec, ProjectManagementOps}
 import org.enso.testkit.{FlakySpec, RetrySpec}
 
+import java.io.File
+import java.nio.file.Paths
+import java.util.UUID
 import scala.io.Source
 
 class ProjectManagementApiSpec
@@ -346,6 +345,37 @@ class ProjectManagementApiSpec
           """)
     }
 
+    "fail when project's edition could not be resolved" in {
+      implicit val client = new WsTestClient(address)
+      val projectId       = createProject("Foo")
+      setProjectParentEdition(
+        "Foo",
+        "some_weird_edition_name_that-surely-does-not-exist"
+      )
+
+      client.send(json"""
+            { "jsonrpc": "2.0",
+              "method": "project/open",
+              "id": 0,
+              "params": {
+                "projectId": $projectId
+              }
+            }
+          """)
+      client.expectJson(json"""
+          {
+            "jsonrpc":"2.0",
+            "id":0,
+            "error":{
+              "code" : 4011,
+              "message" : "Could not resolve project engine version: Cannot load the edition: Could not find edition `some_weird_edition_name_that-surely-does-not-exist`."
+            }
+          }
+          """)
+
+      deleteProject(projectId)
+    }
+
     "start the Language Server if not running" taggedAs Flaky in {
       //given
       val projectName     = "To_Remove"
@@ -631,6 +661,54 @@ class ProjectManagementApiSpec
       deleteProject(fooId)
       deleteProject(barId)
       deleteProject(bazId)
+    }
+
+    "return a list of projects even if editions of some of them cannot be resolved" in {
+      implicit val client = new WsTestClient(address)
+      //given
+      val fooId = createProject("Foo")
+      testClock.moveTimeForward()
+      val barId = createProject("Bar")
+      setProjectParentEdition(
+        "Bar",
+        "some_weird_edition_name_that-surely-does-not-exist"
+      )
+
+      //when
+      client.send(json"""
+            { "jsonrpc": "2.0",
+              "method": "project/list",
+              "id": 0,
+              "params": { }
+            }
+          """)
+      //then
+      client.expectJson(json"""
+          {
+            "jsonrpc":"2.0",
+            "id":0,
+            "result": {
+              "projects": [
+                {
+                  "name": "Bar",
+                  "namespace": "local",
+                  "id": $barId,
+                  "engineVersion": null,
+                  "lastOpened": null
+                },
+                {
+                  "name": "Foo",
+                  "namespace": "local",
+                  "id": $fooId,
+                  "engineVersion": $engineToInstall,
+                  "lastOpened": null
+                }
+              ]
+            }
+          }
+          """)
+      deleteProject(fooId)
+      deleteProject(barId)
     }
 
     "returned sorted list of recently opened projects" in {

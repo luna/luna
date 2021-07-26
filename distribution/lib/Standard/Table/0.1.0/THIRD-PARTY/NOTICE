@@ -1,7 +1,297 @@
 Enso
 Copyright 2020 - 2021 New Byte Order sp. z o. o.
 
+'woodstox-core', licensed under the The Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `com.fasterxml.woodstox.woodstox-core-5.2.1`.
+
+
+'curvesapi', licensed under the BSD License, is distributed with the Table.
+The license file can be found at `licenses/BSD-3-Clause`.
+Copyright notices related to this dependency can be found in the directory `com.github.virtuald.curvesapi-1.06`.
+
+
 'univocity-parsers', licensed under the Apache 2, is distributed with the Table.
 The license file can be found at `licenses/APACHE2.0`.
 Copyright notices related to this dependency can be found in the directory `com.univocity.univocity-parsers-2.9.0`.
+
+
+'SparseBitSet', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `com.zaxxer.SparseBitSet-1.2`.
+
+
+'commons-codec', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `commons-codec.commons-codec-1.15`.
+
+
+'commons-io', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `commons-io.commons-io-1.3.1`.
+
+
+'graphics2d', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `de.rototor.pdfbox.graphics2d-0.30`.
+
+
+'commons-collections4', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.apache.commons.commons-collections4-4.4`.
+
+
+'commons-compress', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.commons.commons-compress-1.20`.
+
+
+'commons-math3', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.apache.commons.commons-math3-3.6.1`.
+
+
+'log4j-api', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.logging.log4j.log4j-api-2.14.0`.
+
+
+'fontbox', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.apache.pdfbox.fontbox-2.0.22`.
+
+
+'pdfbox', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.apache.pdfbox.pdfbox-2.0.22`.
+
+
+'poi', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.apache.poi.poi-5.0.0`.
+
+
+'poi-ooxml', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.apache.poi.poi-ooxml-5.0.0`.
+
+
+'poi-ooxml-lite', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.poi.poi-ooxml-lite-5.0.0`.
+
+
+'xmlsec', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.santuario.xmlsec-2.2.1`.
+
+
+'xmlbeans', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlbeans.xmlbeans-5.0.1`.
+
+
+'batik-all', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-all-1.13`.
+
+
+'batik-anim', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-anim-1.13`.
+
+
+'batik-awt-util', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-awt-util-1.13`.
+
+
+'batik-bridge', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-bridge-1.13`.
+
+
+'batik-codec', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-codec-1.13`.
+
+
+'batik-constants', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-constants-1.13`.
+
+
+'batik-css', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-css-1.13`.
+
+
+'batik-dom', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-dom-1.13`.
+
+
+'batik-ext', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-ext-1.13`.
+
+
+'batik-extension', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-extension-1.13`.
+
+
+'batik-gui-util', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-gui-util-1.13`.
+
+
+'batik-gvt', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-gvt-1.13`.
+
+
+'batik-i18n', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-i18n-1.13`.
+
+
+'batik-parser', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-parser-1.13`.
+
+
+'batik-rasterizer', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-rasterizer-1.13`.
+
+
+'batik-rasterizer-ext', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-rasterizer-ext-1.13`.
+
+
+'batik-script', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-script-1.13`.
+
+
+'batik-shared-resources', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-shared-resources-1.13`.
+
+
+'batik-slideshow', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-slideshow-1.13`.
+
+
+'batik-squiggle', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-squiggle-1.13`.
+
+
+'batik-squiggle-ext', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-squiggle-ext-1.13`.
+
+
+'batik-svg-dom', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-svg-dom-1.13`.
+
+
+'batik-svgbrowser', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-svgbrowser-1.13`.
+
+
+'batik-svggen', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-svggen-1.13`.
+
+
+'batik-svgpp', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-svgpp-1.13`.
+
+
+'batik-svgrasterizer', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-svgrasterizer-1.13`.
+
+
+'batik-swing', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-swing-1.13`.
+
+
+'batik-transcoder', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-transcoder-1.13`.
+
+
+'batik-ttf2svg', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-ttf2svg-1.13`.
+
+
+'batik-util', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-util-1.13`.
+
+
+'batik-xml', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.batik-xml-1.13`.
+
+
+'xmlgraphics-commons', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.apache.xmlgraphics.xmlgraphics-commons-2.4`.
+
+
+'bcpkix-jdk15on', licensed under the Bouncy Castle Licence, is distributed with the Table.
+The license file can be found at `licenses/Bouncy_Castle_Licence.txt`.
+Copyright notices related to this dependency can be found in the directory `org.bouncycastle.bcpkix-jdk15on-1.68`.
+
+
+'bcprov-jdk15on', licensed under the Bouncy Castle Licence, is distributed with the Table.
+The license file can be found at `licenses/Bouncy_Castle_Licence.txt`.
+Copyright notices related to this dependency can be found in the directory `org.bouncycastle.bcprov-jdk15on-1.68`.
+
+
+'stax2-api', licensed under the The BSD License, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `org.codehaus.woodstox.stax2-api-4.2`.
+
+
+'jcl-over-slf4j', licensed under the Apache License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `org.slf4j.jcl-over-slf4j-1.7.30`.
+
+
+'slf4j-api', licensed under the MIT License, is distributed with the Table.
+The license file can be found at `licenses/MIT`.
+Copyright notices related to this dependency can be found in the directory `org.slf4j.slf4j-api-1.7.30`.
+
+
+'serializer', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `xalan.serializer-2.7.2`.
+
+
+'xalan', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `xalan.xalan-2.7.2`.
+
+
+'xml-apis', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license information can be found along with the copyright notices.
+Copyright notices related to this dependency can be found in the directory `xml-apis.xml-apis-1.4.01`.
+
+
+'xml-apis-ext', licensed under the The Apache Software License, Version 2.0, is distributed with the Table.
+The license file can be found at `licenses/APACHE2.0`.
+Copyright notices related to this dependency can be found in the directory `xml-apis.xml-apis-ext-1.3.04`.
 

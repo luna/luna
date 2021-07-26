@@ -1,6 +1,6 @@
 package org.enso.runtimeversionmanager.releases
 import nl.gn0s1s.bump.SemVer
-import org.enso.distribution.OS
+import org.enso.cli.OS
 
 import scala.util.{Failure, Success, Try}
 

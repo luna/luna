@@ -121,3 +121,6 @@ build-cache/
 distribution/lib/Standard/Examples/0.1.0/data/scratch_file
 distribution/lib/Standard/Examples/0.1.0/data/image.png
 distribution/editions
+distribution/lib/Standard/Table/0.1.0/polyglot/
+distribution/lib/Standard/Examples/0.1.0/data/spreadsheet.xls
+distribution/lib/Standard/Examples/0.1.0/data/spreadsheet.xlsx

@@ -48,7 +48,7 @@ object PackageNotices {
 
     writeFiles(destination, additionalFiles)
 
-    for (dependency <- dependencies) {
+    for (dependency <- dependencies.sortBy(_.information.packageName)) {
       val name        = dependency.information.moduleInfo.name
       val licenseName = dependency.information.license.name
       mainNotice.append(
@@ -120,6 +120,7 @@ object PackageNotices {
           .map { case (m, s) =>
             renderCopyright(m, s)
           }
+          .sorted
           .mkString("\n\n")
         val freeName = findFreeName(packageRoot, gatheredNoticesFilename)
         IO.write(freeName, compiledCopyrights + "\n")

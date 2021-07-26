@@ -118,6 +118,11 @@ abstract class JsonRpcServerTestKit
       parsed shouldEqual Right(json)
     }
 
+    def expectSomeJson(timeout: FiniteDuration = 5.seconds.dilated): Json = {
+      val parsed = parse(expectMessage(timeout))
+      inside(parsed) { case Right(json) => json }
+    }
+
     def expectNoMessage(): Unit = outActor.expectNoMessage()
   }
 }

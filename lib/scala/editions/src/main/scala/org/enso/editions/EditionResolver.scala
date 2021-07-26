@@ -62,16 +62,16 @@ case class EditionResolver(provider: EditionProvider) {
     *         a mapping of resolved libraries
     */
   private def resolveLibraries(
-    libraries: Map[String, Editions.Raw.Library],
+    libraries: Map[LibraryName, Editions.Raw.Library],
     currentRepositories: Map[String, Editions.Repository],
     parent: Option[ResolvedEdition]
   ): Either[
     LibraryReferencesUndefinedRepository,
-    Map[String, Editions.Resolved.Library]
+    Map[LibraryName, Editions.Resolved.Library]
   ] = {
     val resolvedPairs: Either[
       LibraryReferencesUndefinedRepository,
-      List[(String, Editions.Resolved.Library)]
+      List[(LibraryName, Editions.Resolved.Library)]
     ] =
       libraries.toList.traverse { case (name, library) =>
         val resolved = resolveLibrary(library, currentRepositories, parent)
@@ -122,7 +122,7 @@ case class EditionResolver(provider: EditionProvider) {
         case (None, None) =>
           Left(
             LibraryReferencesUndefinedRepository(
-              libraryName    = library.qualifiedName,
+              libraryName    = library.name,
               repositoryName = repositoryName
             )
           )

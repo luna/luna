@@ -1,12 +1,14 @@
 package org.enso.interpreter.instrument.job
 
-import java.io.{File, IOException}
+import java.io.File
 import java.util.logging.Level
 
 import cats.implicits._
 import org.enso.compiler.context.{
   Changeset,
+  ExportsBuilder,
   ModuleContext,
+  ModuleExportsDiff,
   SuggestionBuilder,
   SuggestionDiff
 }
@@ -21,11 +23,14 @@ import org.enso.interpreter.instrument.execution.{
   RuntimeContext
 }
 import org.enso.interpreter.runtime.Module
-import org.enso.polyglot.Suggestion
+import org.enso.interpreter.runtime.scope.ModuleScope
+import org.enso.pkg.QualifiedName
+import org.enso.polyglot.{ModuleExports, Suggestion}
 import org.enso.polyglot.data.Tree
 import org.enso.polyglot.runtime.Runtime.Api
 import org.enso.text.buffer.Rope
 
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 import scala.jdk.OptionConverters._
 
@@ -37,6 +42,8 @@ class EnsureCompiledJob(protected val files: Iterable[File])
     extends Job[EnsureCompiledJob.CompilationStatus](List.empty, true, false) {
 
   import EnsureCompiledJob.CompilationStatus
+
+  private val exportsBuilder = new ExportsBuilder
 
   /** @inheritdoc */
   override def run(implicit ctx: RuntimeContext): CompilationStatus = {
@@ -73,10 +80,10 @@ class EnsureCompiledJob(protected val files: Iterable[File])
     val modules = files.flatMap { file =>
       ctx.executionService.getContext.getModuleForFile(file).toScala
     }
+    val moduleCompilationStatus = modules.map(ensureCompiledModule)
     val modulesInScope =
       getModulesInScope.filterNot(m => modules.exists(_ == m))
-    val moduleCompilationStatus = modules.map(ensureCompiledModule)
-    val scopeCompilationStatus  = ensureCompiledScope(modulesInScope)
+    val scopeCompilationStatus = ensureCompiledScope(modulesInScope)
     (moduleCompilationStatus ++ scopeCompilationStatus).maxOption
       .getOrElse(CompilationStatus.Success)
   }
@@ -93,12 +100,32 @@ class EnsureCompiledJob(protected val files: Iterable[File])
     compile(module)
     val changeset = applyEdits(new File(module.getPath))
     compile(module)
-      .map { module =>
+      .map { moduleScope =>
         val cacheInvalidationCommands =
-          buildCacheInvalidationCommands(changeset, module.getLiteralSource)
+          buildCacheInvalidationCommands(
+            changeset,
+            moduleScope.getModule.getLiteralSource
+          )
         runInvalidationCommands(cacheInvalidationCommands)
+        // There are two runtime flags that can disable suggestions for project
+        // and global modules (libraries). They are used primarily in tests to
+        // disable the suggestion updates and reduce the number of messages that
+        // runtime sends.
         if (ctx.executionService.getContext.isProjectSuggestionsEnabled) {
-          analyzeModule(module, changeset)
+          // When the project module is compiled it can involve compilation of
+          // global (library) modules, so we need to check if the global
+          // suggestions are enabled as well.
+          if (ctx.executionService.getContext.isGlobalSuggestionsEnabled) {
+            getCompiledModules(moduleScope).foreach(analyzeModuleInScope)
+          } else {
+            // When the global suggestions are disabled, we will skip indexing
+            // of external libraries, but still want to index the modules that
+            // belongs to the project.
+            val projectModules = getCompiledModules(moduleScope)
+              .filter(m => rootName(m.getName) == rootName(module.getName))
+            projectModules.foreach(analyzeModuleInScope)
+          }
+          analyzeModule(moduleScope.getModule, changeset)
         }
         runCompilationDiagnostics(module)
       }
@@ -115,6 +142,7 @@ class EnsureCompiledJob(protected val files: Iterable[File])
     ctx.executionService.getLogger
       .log(Level.FINEST, s"Modules in scope: ${modulesInScope.map(_.getName)}")
     modulesInScope
+      .filter(!_.isIndexed)
       .map { module =>
         compile(module) match {
           case Left(err) =>
@@ -127,11 +155,12 @@ class EnsureCompiledJob(protected val files: Iterable[File])
               )
             )
             CompilationStatus.Failure
-          case Right(module) =>
+          case Right(moduleScope) =>
             if (ctx.executionService.getContext.isGlobalSuggestionsEnabled) {
-              analyzeModuleInScope(module)
+              getCompiledModules(moduleScope).foreach(analyzeModuleInScope)
+              analyzeModuleInScope(moduleScope.getModule)
             }
-            runCompilationDiagnostics(module)
+            runCompilationDiagnostics(moduleScope.getModule)
         }
       }
   }
@@ -139,15 +168,6 @@ class EnsureCompiledJob(protected val files: Iterable[File])
   private def analyzeModuleInScope(module: Module)(implicit
     ctx: RuntimeContext
   ): Unit = {
-    try module.getSource
-    catch {
-      case e: IOException =>
-        ctx.executionService.getLogger.log(
-          Level.SEVERE,
-          s"Failed to get module source to analyze ${module.getName}",
-          e
-        )
-    }
     if (!module.isIndexed && module.getLiteralSource != null) {
       ctx.executionService.getLogger
         .log(Level.FINEST, s"Analyzing module in scope ${module.getName}")
@@ -155,12 +175,15 @@ class EnsureCompiledJob(protected val files: Iterable[File])
       val newSuggestions = SuggestionBuilder(module.getLiteralSource)
         .build(moduleName, module.getIr)
         .filter(isSuggestionGlobal)
-      val version = ctx.versioning.evalVersion(module.getLiteralSource.toString)
+      val version     = ctx.versioning.evalVersion(module.getLiteralSource.toString)
+      val prevExports = ModuleExports(moduleName.toString, Set())
+      val newExports  = exportsBuilder.build(module.getName, module.getIr)
       val notification = Api.SuggestionsDatabaseModuleUpdateNotification(
-        file    = getIndexingPath(module),
+        module  = moduleName.toString,
         version = version,
         actions =
           Vector(Api.SuggestionsDatabaseAction.Clean(moduleName.toString)),
+        exports = ModuleExportsDiff.compute(prevExports, newExports),
         updates = SuggestionDiff.compute(Tree.empty, newSuggestions)
       )
       sendModuleUpdate(notification)
@@ -184,10 +207,14 @@ class EnsureCompiledJob(protected val files: Iterable[File])
           .build(moduleName, module.getIr)
       val diff = SuggestionDiff
         .compute(prevSuggestions, newSuggestions)
+      val prevExports = exportsBuilder.build(moduleName, changeset.ir)
+      val newExports  = exportsBuilder.build(moduleName, module.getIr)
+      val exportsDiff = ModuleExportsDiff.compute(prevExports, newExports)
       val notification = Api.SuggestionsDatabaseModuleUpdateNotification(
-        file    = new File(module.getPath),
+        module  = moduleName.toString,
         version = version,
         actions = Vector(),
+        exports = exportsDiff,
         updates = diff
       )
       sendModuleUpdate(notification)
@@ -197,11 +224,14 @@ class EnsureCompiledJob(protected val files: Iterable[File])
       val newSuggestions =
         SuggestionBuilder(module.getLiteralSource)
           .build(moduleName, module.getIr)
+      val prevExports = ModuleExports(moduleName.toString, Set())
+      val newExports  = exportsBuilder.build(moduleName, module.getIr)
       val notification = Api.SuggestionsDatabaseModuleUpdateNotification(
-        file    = new File(module.getPath),
+        module  = moduleName.toString,
         version = version,
         actions =
           Vector(Api.SuggestionsDatabaseAction.Clean(moduleName.toString)),
+        exports = ModuleExportsDiff.compute(prevExports, newExports),
         updates = SuggestionDiff.compute(Tree.empty, newSuggestions)
       )
       sendModuleUpdate(notification)
@@ -314,16 +344,18 @@ class EnsureCompiledJob(protected val files: Iterable[File])
     */
   private def compile(
     module: Module
-  )(implicit ctx: RuntimeContext): Either[Throwable, Module] = {
+  )(implicit ctx: RuntimeContext): Either[Throwable, ModuleScope] = {
     val prevStage = module.getCompilationStage
     val compilationResult = Either.catchNonFatal {
-      module.compileScope(ctx.executionService.getContext).getModule
+      module.compileScope(ctx.executionService.getContext)
     }
-    ctx.executionService.getLogger
-      .log(
-        Level.FINEST,
-        s"Compiled ${module.getName} $prevStage->${module.getCompilationStage}"
-      )
+    if (prevStage != module.getCompilationStage) {
+      ctx.executionService.getLogger
+        .log(
+          Level.FINEST,
+          s"Compiled ${module.getName} $prevStage->${module.getCompilationStage}"
+        )
+    }
     compilationResult
   }
 
@@ -405,7 +437,11 @@ class EnsureCompiledJob(protected val files: Iterable[File])
   private def sendModuleUpdate(
     payload: Api.SuggestionsDatabaseModuleUpdateNotification
   )(implicit ctx: RuntimeContext): Unit =
-    if (payload.actions.nonEmpty || !payload.updates.isEmpty) {
+    if (
+      payload.actions.nonEmpty ||
+      payload.exports.nonEmpty ||
+      !payload.updates.isEmpty
+    ) {
       ctx.endpoint.sendToClient(Api.Response(payload))
     }
 
@@ -442,6 +478,7 @@ class EnsureCompiledJob(protected val files: Iterable[File])
 
   private def isSuggestionGlobal(suggestion: Suggestion): Boolean =
     suggestion match {
+      case _: Suggestion.Module   => true
       case _: Suggestion.Atom     => true
       case _: Suggestion.Method   => true
       case _: Suggestion.Function => false
@@ -459,7 +496,7 @@ class EnsureCompiledJob(protected val files: Iterable[File])
   private def getCacheMetadata(
     stack: Iterable[InstrumentFrame]
   )(implicit ctx: RuntimeContext): Option[CachePreferenceAnalysis.Metadata] =
-    stack.lastOption flatMap {
+    stack.lastOption.flatMap {
       case InstrumentFrame(Api.StackItem.ExplicitCall(ptr, _, _), _, _) =>
         ctx.executionService.getContext.findModule(ptr.module).toScala.map {
           module =>
@@ -475,23 +512,39 @@ class EnsureCompiledJob(protected val files: Iterable[File])
   /** Get all modules in the current compiler scope. */
   private def getModulesInScope(implicit
     ctx: RuntimeContext
-  ): Iterable[Module] = {
-    val topScope       = ctx.executionService.getContext.getTopScope
-    val modulesInScope = topScope.getModules.asScala
-    val builtins       = topScope.getBuiltins.getModule
-    modulesInScope ++ Seq(builtins)
+  ): Iterable[Module] =
+    ctx.executionService.getContext.getTopScope.getModules.asScala
+
+  private def getCompiledModules(moduleScope: ModuleScope): Seq[Module] = {
+    @scala.annotation.tailrec
+    def go(
+      queue: mutable.Queue[ModuleScope],
+      result: mutable.Set[Module]
+    ): Seq[Module] =
+      if (queue.isEmpty) result.toSeq.reverse
+      else {
+        val scope        = queue.dequeue()
+        val scopeImports = scope.getImports
+        result.add(scope.getModule)
+        scopeImports.forEach { scopeImport =>
+          if (!result.contains(scopeImport.getModule)) {
+            queue.enqueue(scopeImport)
+            result.add(scopeImport.getModule)
+          }
+        }
+
+        go(queue, result)
+      }
+
+    val queue = mutable.Queue.empty[ModuleScope]
+    moduleScope.getImports.forEach { moduleImport =>
+      queue.enqueue(moduleImport)
+    }
+    go(queue, mutable.LinkedHashSet.empty)
   }
 
-  /** Get the module path for suggestions database indexing.
-    *
-    * If the module is synthetic (i.e. Builtins), uses its name as a path.
-    */
-  private def getIndexingPath(module: Module): File =
-    if (module.getPath eq null) {
-      new File(s"/${module.getName}")
-    } else
-      new File(module.getPath)
-
+  private def rootName(name: QualifiedName): String =
+    name.path.headOption.getOrElse(name.item)
 }
 
 object EnsureCompiledJob {

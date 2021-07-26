@@ -1,3 +1,18 @@
+    /* Partially optimised Serpent S Box boolean functions derived  */
+    /* using a recursive descent analyser but without a full search */
+    /* of all subtrees. This set of S boxes is the result of work    */
+    /* by Sam Simpson and Brian Gladman using the spare time on a    */
+    /* cluster of high capacity servers to search for S boxes with    */
+    /* this customised search engine. There are now an average of    */
+    /* 15.375 terms    per S box.                                        */
+    /*                                                              */
+    /* Copyright:   Dr B. R Gladman (gladman@seven77.demon.co.uk)   */
+    /*                and Sam Simpson (s.simpson@mia.co.uk)            */
+    /*              17th December 1998                                */
+    /*                                                              */
+    /* We hereby give permission for information in this file to be */
+    /* used freely subject only to acknowledgement of its origin.    */
+
 /**
  * Copyright (c) 2011 Tim Buktu (tbuktu@hotmail.com)
  *
@@ -19,21 +34,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-
-    /* Partially optimised Serpent S Box boolean functions derived  */
-    /* using a recursive descent analyser but without a full search */
-    /* of all subtrees. This set of S boxes is the result of work    */
-    /* by Sam Simpson and Brian Gladman using the spare time on a    */
-    /* cluster of high capacity servers to search for S boxes with    */
-    /* this customised search engine. There are now an average of    */
-    /* 15.375 terms    per S box.                                        */
-    /*                                                              */
-    /* Copyright:   Dr B. R Gladman (gladman@seven77.demon.co.uk)   */
-    /*                and Sam Simpson (s.simpson@mia.co.uk)            */
-    /*              17th December 1998                                */
-    /*                                                              */
-    /* We hereby give permission for information in this file to be */
-    /* used freely subject only to acknowledgement of its origin.    */
 
 /**
  * The Bouncy Castle License

@@ -205,7 +205,26 @@ object Config {
     val overridesObject = JsonObject(
       overrides ++ preferLocalOverride: _*
     )
-    originals.remove(JsonFields.ensoVersion).deepMerge(overridesObject).asJson
+
+    /** Fields that should not be inherited from the original set of fields.
+      *
+      * `ensoVersion` is dropped, because due to migration it is overridden by
+      * `edition` and we don't want to have both to avoid inconsistency.
+      *
+      * `prefer-local-libraries` cannot be inherited, because if it was set to
+      * `true` and we have changed it to `false`, overrides will not include it,
+      * because, as `false` is its default value, we just ignore the field. But
+      * if we inherit it from original fields, we would get `true` back. If the
+      * setting is still set to true, it will be included in the overrides, so
+      * it does not have to be inherited either.
+      */
+    val fieldsToRemoveFromOriginals =
+      Seq(JsonFields.ensoVersion, JsonFields.preferLocalLibraries)
+
+    val removed = fieldsToRemoveFromOriginals.foldLeft(originals) {
+      case (obj, key) => obj.remove(key)
+    }
+    removed.deepMerge(overridesObject).asJson
   }
 
   /** Tries to parse the [[Config]] from a YAML string. */
@@ -229,7 +248,7 @@ object Config {
     ensoVersion: SemVer
   ): Editions.RawEdition = Editions.Raw.Edition(
     parent        = None,
-    engineVersion = Some(SemVerEnsoVersion(ensoVersion)),
+    engineVersion = Some(ensoVersion),
     repositories  = Map(),
     libraries     = Map()
   )

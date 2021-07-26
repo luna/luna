@@ -26,4 +26,16 @@ object MonitoringProtocol {
     */
   case object OK extends ReadinessResponse
 
+  /** A request to reset the idle time. */
+  case object ResetIdleTime
+
+  /** A request to get the server idle time. */
+  case object GetIdleTime
+
+  /** A response containing the idle time.
+    *
+    * @param idleTimeSeconds the idle time in seconds.
+    */
+  case class IdleTime(idleTimeSeconds: Long)
+
 }

@@ -17,9 +17,9 @@ class ExecuteJob(
 ) extends Job[Unit](
       List(contextId),
       isCancellable = true,
-      // TODO[MK]: make this interruptible when https://github.com/oracle/graal/issues/3273
+      // TODO[MK]: make this interruptible when https://github.com/oracle/graal/issues/3590
       // is resolved
-      mayInterruptIfRunning = true
+      mayInterruptIfRunning = false
     ) {
 
   def this(exe: Executable) =

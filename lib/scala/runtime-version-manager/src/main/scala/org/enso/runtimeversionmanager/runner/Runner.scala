@@ -249,8 +249,11 @@ class Runner(
   ): SemVer = versionOverride.getOrElse {
     project match {
       case Some(project) =>
-        val edition = project.edition
-        val version = editionManager.resolveEngineVersion(edition).get
+        // TODO [RW] properly get the default edition, see #1864
+        val version = project.edition
+          .map(edition => editionManager.resolveEngineVersion(edition).get)
+          .map(SemVerEnsoVersion)
+          .getOrElse(DefaultEnsoVersion)
         version match {
           case DefaultEnsoVersion =>
             globalConfigurationManager.defaultVersion

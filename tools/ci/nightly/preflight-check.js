@@ -29,6 +29,11 @@ function setVersionString(name) {
   console.log("::set-output name=nightly-version::" + name);
 }
 
+/// Sets the step output 'nightly-edition'.
+function setEditionName(name) {
+  console.log("::set-output name=nightly-edition::" + name);
+}
+
 /** Checks if there are any new changes to see if the nightly build should
  * proceed.
  */
@@ -61,16 +66,15 @@ function checkProceed(nightlies) {
   }
 }
 
-/** Prepares a version string for the nightly build.
+/** Prepares a version string and edition name for the nightly build.
  *
  * A '-SNAPSHOT' suffix is added if it is not already present, next the current
  * date is appended. If this is not the first nightly build on that date, an
  * increasing numeric suffix is added.
  */
-function prepareVersionString(nightlies) {
-  function isTaken(name) {
-    const tagName = "enso-" + name;
-    return nightlies.some((entry) => entry.tag_name == tagName);
+function prepareVersions(nightlies) {
+  function isTaken(suffix) {
+    return nightlies.some((entry) => entry.tag_name.endsWith(suffix));
   }
 
   const content = fs.readFileSync(buildConfigPath, { encoding: "utf-8" });
@@ -86,24 +90,29 @@ function prepareVersionString(nightlies) {
     baseName += "-SNAPSHOT";
   }
 
-  baseName += "." + isoDate();
-
-  function makeName(ix) {
+  const now = isoDate();
+  function makeSuffix(ix) {
     if (ix == 0) {
-      return baseName;
+      return now;
     } else {
-      return baseName + "." + ix;
+      return now + "." + ix;
     }
   }
 
   let ix = 0;
-  while (isTaken(makeName(ix))) {
+  while (isTaken(makeSuffix(ix))) {
     ix++;
   }
 
-  const name = makeName(ix);
-  console.log("The build will be using version '" + name + "'");
-  return name;
+  const suffix = makeSuffix(ix);
+  const versionName = baseName + "." + suffix;
+  const edition = "nightly-" + suffix;
+  console.log("The build will be using version '" + versionName + "'");
+  console.log("The build will be using edition '" + edition + "'");
+  return {
+    version: versionName,
+    edition: edition,
+  };
 }
 
 async function main() {
@@ -111,8 +120,9 @@ async function main() {
   const shouldProceed = checkProceed(nightlies);
   setProceed(shouldProceed);
   if (shouldProceed) {
-    const versionString = prepareVersionString(nightlies);
-    setVersionString(versionString);
+    const versions = prepareVersions(nightlies);
+    setVersionString(versions.version);
+    setEditionName(versions.edition);
   }
 }
 

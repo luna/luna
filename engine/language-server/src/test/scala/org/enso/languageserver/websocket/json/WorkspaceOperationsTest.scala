@@ -9,6 +9,8 @@ import java.io.{File, FileOutputStream}
 
 class WorkspaceOperationsTest extends BaseServerTest with FlakySpec {
 
+  override def initializeProjectPackage: Boolean = false
+
   "workspace/projectInfo" must {
     val packageConfigName = Config.ensoPackageConfigName
     val testYamlPath      = new File(testContentRoot.file, packageConfigName)

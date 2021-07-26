@@ -1,15 +1,16 @@
 package org.enso.launcher
 
-import org.enso.distribution.OS
-
-import java.nio.file.{Files, Path}
+import org.enso.cli.OS
 import org.enso.runtimeversionmanager.test.NativeTestHelper
+import org.enso.testkit.process.RunResult
 import org.scalatest.concurrent.{Signaler, TimeLimitedTests}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatest.time.Span
 import org.scalatest.time.SpanSugar._
 import org.scalatest.wordspec.AnyWordSpec
+
+import java.nio.file.{Files, Path}
 
 /** Contains helper methods for creating tests that need to run the native
   * launcher binary.

@@ -130,8 +130,8 @@ public abstract class Storage {
    *     this parameter is unused.
    * @param fallback the function to use if a vectorized operation is not available.
    * @param skipNa whether missing values should be passed to the {@code fallback} function.
-   * @param resultSize the number of times the {@link Aggregator#nextGroup(java.util.stream.IntStream)} method will be
-   *     called.
+   * @param resultSize the number of times the {@link
+   *     Aggregator#nextGroup(java.util.stream.IntStream)} method will be called.
    * @return an aggregator satisfying the above properties.
    */
   public final Aggregator getAggregator(
@@ -259,4 +259,28 @@ public abstract class Storage {
     return new StorageListView(this);
   }
 
+  /**
+   * Gets an element at the specified index and converts it to a CSV representation.
+   *
+   * @param index the index to look up.
+   * @param toCsvString a utility for converting unknown values to CSV.
+   * @return a CSV representation of the value at {@code index}.
+   */
+  public String getCsvString(int index, Function<Object, String> toCsvString) {
+    if (isNa(index)) {
+      return "";
+    } else {
+      return getPresentCsvString(index, toCsvString);
+    }
+  }
+
+  /**
+   * Gets an element at the specified index and converts it to a CSV representation. This method is
+   * guaranteed to only be run with indexes corresponding to non-missing values.
+   *
+   * @param index the index to look up.
+   * @param toCsvString a utility for converting unknown values to CSV.
+   * @return a CSV representation of the value at {@code index}.
+   */
+  protected abstract String getPresentCsvString(int index, Function<Object, String> toCsvString);
 }

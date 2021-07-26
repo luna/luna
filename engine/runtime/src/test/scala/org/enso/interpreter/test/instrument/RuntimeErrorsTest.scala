@@ -130,53 +130,6 @@ class RuntimeErrorsTest
       Api.Response(Api.ExecutionComplete(contextId))
   }
 
-  object Update {
-
-    def panic(
-      contextId: UUID,
-      expressionId: UUID,
-      payload: Api.ExpressionUpdate.Payload
-    ): Api.Response =
-      Api.Response(
-        Api.ExpressionUpdates(
-          contextId,
-          Set(
-            Api.ExpressionUpdate(
-              expressionId,
-              Some(Constants.PANIC),
-              None,
-              Vector(Api.ProfilingInfo.ExecutionTime(0)),
-              false,
-              payload
-            )
-          )
-        )
-      )
-
-    def panic(
-      contextId: UUID,
-      expressionId: UUID,
-      methodPointer: Api.MethodPointer,
-      payload: Api.ExpressionUpdate.Payload
-    ): Api.Response =
-      Api.Response(
-        Api.ExpressionUpdates(
-          contextId,
-          Set(
-            Api.ExpressionUpdate(
-              expressionId,
-              Some(Constants.PANIC),
-              Some(methodPointer),
-              Vector(Api.ProfilingInfo.ExecutionTime(0)),
-              false,
-              payload
-            )
-          )
-        )
-      )
-
-  }
-
   def contentsVersion(content: String): ContentVersion =
     Sha3_224VersionCalculator.evalVersion(content)
 
@@ -214,7 +167,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -247,7 +200,7 @@ class RuntimeErrorsTest
           )
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         xId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -255,7 +208,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         yId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -263,7 +216,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         mainResId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -298,7 +251,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -331,7 +284,7 @@ class RuntimeErrorsTest
           )
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         mainBodyId,
         Api.MethodPointer("Enso_Test.Test.Main", "Enso_Test.Test.Main", "foo"),
@@ -377,7 +330,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -444,7 +397,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -482,7 +435,7 @@ class RuntimeErrorsTest
           )
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         xId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -527,7 +480,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -601,7 +554,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -710,7 +663,7 @@ class RuntimeErrorsTest
     context.consumeOut shouldEqual List("499999999999")
   }
 
-  it should "not send updates when dataflow error changes" in {
+  it should "not send updates when dataflow error changes in expression" in {
     val contextId  = UUID.randomUUID()
     val requestId  = UUID.randomUUID()
     val moduleName = "Enso_Test.Test.Main"
@@ -741,7 +694,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -796,6 +749,96 @@ class RuntimeErrorsTest
     context.consumeOut shouldEqual List("(Error: MyError2)")
   }
 
+  it should "not send updates when dataflow error changes in method" in {
+    val contextId  = UUID.randomUUID()
+    val requestId  = UUID.randomUUID()
+    val moduleName = "Enso_Test.Test.Main"
+    val metadata   = new Metadata
+    val xId        = metadata.addItem(111, 8)
+    val yId        = metadata.addItem(128, 5)
+    val mainResId  = metadata.addItem(138, 12)
+
+    val code =
+      """from Standard.Builtins import all
+        |
+        |type MyError1
+        |type MyError2
+        |
+        |foo =
+        |    Error.throw MyError1
+        |
+        |main =
+        |    x = this.foo
+        |    y = x - 1
+        |    IO.println y
+        |""".stripMargin.linesIterator.mkString("\n")
+    val contents = metadata.appendToCode(code)
+    val mainFile = context.writeMain(contents)
+
+    // create context
+    context.send(Api.Request(requestId, Api.CreateContextRequest(contextId)))
+    context.receive shouldEqual Some(
+      Api.Response(requestId, Api.CreateContextResponse(contextId))
+    )
+
+    // Open the new file
+    context.send(
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
+    )
+    context.receiveNone shouldEqual None
+
+    // push main
+    context.send(
+      Api.Request(
+        requestId,
+        Api.PushContextRequest(
+          contextId,
+          Api.StackItem.ExplicitCall(
+            Api.MethodPointer(moduleName, "Enso_Test.Test.Main", "main"),
+            None,
+            Vector()
+          )
+        )
+      )
+    )
+    context.receive(5) should contain theSameElementsAs Seq(
+      Api.Response(requestId, Api.PushContextResponse(contextId)),
+      TestMessages.error(
+        contextId,
+        xId,
+        Api.MethodPointer(moduleName, moduleName, "foo"),
+        Api.ExpressionUpdate.Payload.DataflowError(Seq())
+      ),
+      TestMessages.error(
+        contextId,
+        yId,
+        Api.ExpressionUpdate.Payload.DataflowError(Seq())
+      ),
+      TestMessages.update(contextId, mainResId, Constants.NOTHING),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual Seq("(Error: MyError1)")
+
+    // Modify the file
+    context.send(
+      Api.Request(
+        Api.EditFileNotification(
+          mainFile,
+          Seq(
+            TextEdit(
+              model.Range(model.Position(6, 16), model.Position(6, 24)),
+              "MyError2"
+            )
+          )
+        )
+      )
+    )
+    context.receive(1) should contain theSameElementsAs Seq(
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual List("(Error: MyError2)")
+  }
+
   it should "continue execution after thrown panics" in {
     val contextId  = UUID.randomUUID()
     val requestId  = UUID.randomUUID()
@@ -826,7 +869,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -846,7 +889,7 @@ class RuntimeErrorsTest
     )
     context.receive(5) should contain theSameElementsAs Seq(
       Api.Response(requestId, Api.PushContextResponse(contextId)),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         xId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -854,7 +897,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         yId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -862,7 +905,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         mainResId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -925,7 +968,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -958,7 +1001,7 @@ class RuntimeErrorsTest
           )
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         xId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -966,7 +1009,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         yId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -974,7 +1017,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         mainResId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1010,7 +1053,7 @@ class RuntimeErrorsTest
 
   }
 
-  it should "send updates when panic changes" in {
+  it should "send updates when panic changes in expression" in {
     val contextId  = UUID.randomUUID()
     val requestId  = UUID.randomUUID()
     val moduleName = "Enso_Test.Test.Main"
@@ -1041,7 +1084,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1061,7 +1104,7 @@ class RuntimeErrorsTest
     )
     context.receive(5) should contain theSameElementsAs Seq(
       Api.Response(requestId, Api.PushContextResponse(contextId)),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         xId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1069,7 +1112,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         yId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1077,7 +1120,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         mainResId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1104,7 +1147,7 @@ class RuntimeErrorsTest
       )
     )
     context.receive(4) should contain theSameElementsAs Seq(
-      Update.panic(
+      TestMessages.panic(
         contextId,
         xId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1112,7 +1155,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         yId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1120,7 +1163,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         mainResId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1131,6 +1174,212 @@ class RuntimeErrorsTest
       context.executionComplete(contextId)
     )
     context.consumeOut shouldEqual List()
+  }
+
+  it should "send updates when panic is resolved in method" in {
+    val contextId  = UUID.randomUUID()
+    val requestId  = UUID.randomUUID()
+    val moduleName = "Enso_Test.Test.Main"
+    val metadata   = new Metadata
+    val xId        = metadata.addItem(75, 8)
+    val yId        = metadata.addItem(92, 5)
+    val mainResId  = metadata.addItem(102, 12)
+
+    val code =
+      """from Standard.Builtins import all
+        |
+        |foo =
+        |    Panic.throw 9
+        |
+        |main =
+        |    x = this.foo
+        |    y = x + 1
+        |    IO.println y
+        |""".stripMargin.linesIterator.mkString("\n")
+    val contents = metadata.appendToCode(code)
+    val mainFile = context.writeMain(contents)
+
+    // create context
+    context.send(Api.Request(requestId, Api.CreateContextRequest(contextId)))
+    context.receive shouldEqual Some(
+      Api.Response(requestId, Api.CreateContextResponse(contextId))
+    )
+
+    // Open the new file
+    context.send(
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
+    )
+    context.receiveNone shouldEqual None
+
+    // push main
+    context.send(
+      Api.Request(
+        requestId,
+        Api.PushContextRequest(
+          contextId,
+          Api.StackItem.ExplicitCall(
+            Api.MethodPointer(moduleName, "Enso_Test.Test.Main", "main"),
+            None,
+            Vector()
+          )
+        )
+      )
+    )
+    context.receive(5) should contain theSameElementsAs Seq(
+      Api.Response(requestId, Api.PushContextResponse(contextId)),
+      TestMessages.panic(
+        contextId,
+        xId,
+        Api.MethodPointer(moduleName, moduleName, "foo"),
+        Api.ExpressionUpdate.Payload.Panic(
+          "9 (Integer)",
+          Seq(xId)
+        )
+      ),
+      TestMessages.panic(
+        contextId,
+        yId,
+        Api.ExpressionUpdate.Payload.Panic(
+          "9 (Integer)",
+          Seq(xId)
+        )
+      ),
+      TestMessages.panic(
+        contextId,
+        mainResId,
+        Api.ExpressionUpdate.Payload.Panic(
+          "9 (Integer)",
+          Seq(xId)
+        )
+      ),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual Seq()
+
+    // Modify the file
+    context.send(
+      Api.Request(
+        Api.EditFileNotification(
+          mainFile,
+          Seq(
+            TextEdit(
+              model.Range(model.Position(3, 4), model.Position(3, 17)),
+              "10002 - 10000"
+            )
+          )
+        )
+      )
+    )
+    context.receive(4) should contain theSameElementsAs Seq(
+      TestMessages.update(
+        contextId,
+        xId,
+        Constants.INTEGER,
+        Api.MethodPointer(moduleName, moduleName, "foo")
+      ),
+      TestMessages.update(contextId, yId, Constants.INTEGER),
+      TestMessages.update(contextId, mainResId, Constants.NOTHING),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual List("3")
+  }
+
+  it should "send updates when dataflow error is resolved in method" in {
+    val contextId  = UUID.randomUUID()
+    val requestId  = UUID.randomUUID()
+    val moduleName = "Enso_Test.Test.Main"
+    val metadata   = new Metadata
+    val xId        = metadata.addItem(75, 8)
+    val yId        = metadata.addItem(92, 5)
+    val mainResId  = metadata.addItem(102, 12)
+
+    val code =
+      """from Standard.Builtins import all
+        |
+        |foo =
+        |    Error.throw 9
+        |
+        |main =
+        |    x = this.foo
+        |    y = x + 1
+        |    IO.println y
+        |""".stripMargin.linesIterator.mkString("\n")
+    val contents = metadata.appendToCode(code)
+    val mainFile = context.writeMain(contents)
+
+    // create context
+    context.send(Api.Request(requestId, Api.CreateContextRequest(contextId)))
+    context.receive shouldEqual Some(
+      Api.Response(requestId, Api.CreateContextResponse(contextId))
+    )
+
+    // Open the new file
+    context.send(
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
+    )
+    context.receiveNone shouldEqual None
+
+    // push main
+    context.send(
+      Api.Request(
+        requestId,
+        Api.PushContextRequest(
+          contextId,
+          Api.StackItem.ExplicitCall(
+            Api.MethodPointer(moduleName, "Enso_Test.Test.Main", "main"),
+            None,
+            Vector()
+          )
+        )
+      )
+    )
+    context.receive(5) should contain theSameElementsAs Seq(
+      Api.Response(requestId, Api.PushContextResponse(contextId)),
+      TestMessages.error(
+        contextId,
+        xId,
+        Api.MethodPointer(moduleName, moduleName, "foo"),
+        Api.ExpressionUpdate.Payload.DataflowError(Seq())
+      ),
+      TestMessages.error(
+        contextId,
+        yId,
+        Api.ExpressionUpdate.Payload.DataflowError(Seq())
+      ),
+      TestMessages.update(
+        contextId,
+        mainResId,
+        Constants.NOTHING
+      ),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual Seq("(Error: 9)")
+
+    // Modify the file
+    context.send(
+      Api.Request(
+        Api.EditFileNotification(
+          mainFile,
+          Seq(
+            TextEdit(
+              model.Range(model.Position(3, 4), model.Position(3, 17)),
+              "10002 - 10000"
+            )
+          )
+        )
+      )
+    )
+    context.receive(3) should contain theSameElementsAs Seq(
+      TestMessages.update(
+        contextId,
+        xId,
+        Constants.INTEGER,
+        Api.MethodPointer(moduleName, moduleName, "foo")
+      ),
+      TestMessages.update(contextId, yId, Constants.INTEGER),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual List("3")
   }
 
   it should "not cache panics" in {
@@ -1161,7 +1410,7 @@ class RuntimeErrorsTest
 
     // Open the new file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -1194,7 +1443,7 @@ class RuntimeErrorsTest
           )
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         xId,
         Api.ExpressionUpdate.Payload.Panic(
@@ -1202,7 +1451,7 @@ class RuntimeErrorsTest
           Seq(xId)
         )
       ),
-      Update.panic(
+      TestMessages.panic(
         contextId,
         mainResId,
         Api.ExpressionUpdate.Payload.Panic(

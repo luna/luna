@@ -1,12 +1,16 @@
 package org.enso.projectmanager.versionmanagement
 
 import org.enso.distribution.locking.ResourceManager
-import org.enso.distribution.{DistributionManager, EditionManager, Environment}
+import org.enso.distribution.{
+  DistributionManager,
+  EditionManager,
+  Environment,
+  TemporaryDirectoryManager
+}
 import org.enso.runtimeversionmanager.components.{
   RuntimeVersionManagementUserInterface,
   RuntimeVersionManager
 }
-import org.enso.runtimeversionmanager.distribution.TemporaryDirectoryManager
 import org.enso.runtimeversionmanager.releases.ReleaseProvider
 import org.enso.runtimeversionmanager.releases.engine.EngineRelease
 import org.enso.runtimeversionmanager.runner.JVMSettings

@@ -4,9 +4,10 @@ import java.io.IOException
 import java.nio.file.{Files, NoSuchFileException, Path}
 import cats.implicits._
 import nl.gn0s1s.bump.SemVer
+import org.enso.cli.OS
 import org.enso.cli.arguments.Opts
 import org.enso.cli.arguments.Opts.implicits._
-import org.enso.distribution.{FileSystem, OS}
+import org.enso.distribution.FileSystem
 import org.enso.runtimeversionmanager.CurrentVersion
 import org.enso.distribution.FileSystem.PathSyntax
 import org.enso.runtimeversionmanager.cli.Arguments._

@@ -1,6 +1,6 @@
 package org.enso.runtimeversionmanager.components
 
-import org.enso.distribution.OS
+import org.enso.cli.OS
 
 /** Provides configuration of the runtime components. */
 trait RuntimeComponentConfiguration {

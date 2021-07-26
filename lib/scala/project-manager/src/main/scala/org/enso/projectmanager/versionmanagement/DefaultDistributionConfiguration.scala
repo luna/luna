@@ -1,7 +1,12 @@
 package org.enso.projectmanager.versionmanagement
 
 import com.typesafe.scalalogging.LazyLogging
-import org.enso.distribution.{DistributionManager, EditionManager, Environment}
+import org.enso.distribution.{
+  DistributionManager,
+  EditionManager,
+  Environment,
+  TemporaryDirectoryManager
+}
 import org.enso.distribution.locking.{
   ResourceManager,
   ThreadSafeFileLockManager
@@ -14,7 +19,6 @@ import org.enso.runtimeversionmanager.components.{
   RuntimeVersionManagementUserInterface,
   RuntimeVersionManager
 }
-import org.enso.runtimeversionmanager.distribution.TemporaryDirectoryManager
 import org.enso.runtimeversionmanager.releases.ReleaseProvider
 import org.enso.runtimeversionmanager.releases.engine.{
   EngineRelease,
@@ -49,13 +53,11 @@ object DefaultDistributionConfiguration
   lazy val resourceManager = new ResourceManager(lockManager)
 
   /** @inheritdoc */
-  lazy val editionManager = new EditionManager(
-    distributionManager.paths.editionSearchPaths.toList
-  )
+  lazy val editionManager = EditionManager(distributionManager)
 
   /** @inheritdoc */
   lazy val temporaryDirectoryManager =
-    new TemporaryDirectoryManager(distributionManager, resourceManager)
+    TemporaryDirectoryManager(distributionManager, resourceManager)
 
   lazy val componentConfiguration: RuntimeComponentConfiguration =
     new GraalVMComponentConfiguration

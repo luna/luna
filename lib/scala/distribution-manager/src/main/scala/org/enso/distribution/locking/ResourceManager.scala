@@ -151,10 +151,10 @@ class ResourceManager(lockManager: LockManager) {
     */
   def startUsingTemporaryDirectory(): Unit = {
     if (temporaryDirectoryLock.isDefined) {
-      throw new IllegalStateException(
-        "Temporary directory lock has been acquired twice."
-      )
+      logger.trace("The temporary directory was already in-use.")
+      return
     }
+
     val lock = lockManager.acquireLockWithWaitingAction(
       TemporaryDirectory.name,
       LockType.Shared,

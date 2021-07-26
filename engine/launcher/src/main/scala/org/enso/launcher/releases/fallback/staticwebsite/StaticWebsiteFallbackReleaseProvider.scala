@@ -1,6 +1,6 @@
 package org.enso.launcher.releases.fallback.staticwebsite
 
-import org.enso.runtimeversionmanager.http.URIBuilder
+import org.enso.downloader.http.URIBuilder
 import org.enso.runtimeversionmanager.releases.Release
 import org.enso.launcher.releases.fallback.FallbackReleaseProvider
 

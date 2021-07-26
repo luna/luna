@@ -3,6 +3,7 @@ package org.enso.searcher
 import org.enso.polyglot.Suggestion
 import org.enso.polyglot.data.Tree
 import org.enso.polyglot.runtime.Runtime.Api.{
+  ExportsUpdate,
   SuggestionArgumentAction,
   SuggestionUpdate,
   SuggestionsDatabaseAction
@@ -84,7 +85,7 @@ trait SuggestionsRepo[F[_]] {
     */
   def applyTree(
     tree: Tree[SuggestionUpdate]
-  ): F[(Long, Seq[QueryResult[SuggestionUpdate]])]
+  ): F[Seq[QueryResult[SuggestionUpdate]]]
 
   /** Apply the sequence of actions on the database.
     *
@@ -94,6 +95,15 @@ trait SuggestionsRepo[F[_]] {
   def applyActions(
     actions: Seq[SuggestionsDatabaseAction]
   ): F[Seq[QueryResult[SuggestionsDatabaseAction]]]
+
+  /** Apply the sequence of export updates on the database.
+    *
+    * @param updates the list of export updates
+    * @return the result of applying the updates
+    */
+  def applyExports(
+    updates: Seq[ExportsUpdate]
+  ): F[Seq[QueryResult[ExportsUpdate]]]
 
   /** Remove the suggestion.
     *
@@ -132,7 +142,8 @@ trait SuggestionsRepo[F[_]] {
     returnType: Option[String],
     documentation: Option[Option[String]],
     documentationHtml: Option[Option[String]],
-    scope: Option[Suggestion.Scope]
+    scope: Option[Suggestion.Scope],
+    reexport: Option[Option[String]]
   ): F[(Long, Option[Long])]
 
   /** Update a list of suggestions by external id.

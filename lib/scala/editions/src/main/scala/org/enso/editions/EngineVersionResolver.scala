@@ -1,5 +1,6 @@
 package org.enso.editions
 
+import nl.gn0s1s.bump.SemVer
 import org.enso.editions.Editions.RawEdition
 import org.enso.editions.provider.EditionProvider
 
@@ -19,7 +20,7 @@ case class EngineVersionResolver(editionProvider: EditionProvider) {
     */
   def resolveEnsoVersion(
     edition: RawEdition
-  ): Either[EditionResolutionError, EnsoVersion] = {
+  ): Either[EditionResolutionError, SemVer] = {
     for {
       edition <- editionResolver.resolve(edition)
     } yield edition.getEngineVersion

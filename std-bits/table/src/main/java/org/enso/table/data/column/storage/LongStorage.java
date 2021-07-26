@@ -1,6 +1,7 @@
 package org.enso.table.data.column.storage;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.LongStream;
 
 import org.enso.table.data.column.builder.object.NumericBuilder;
@@ -378,5 +379,10 @@ public class LongStorage extends NumericStorage {
     System.arraycopy(data, offset, newData, 0, newSize);
     BitSet newMask = isMissing.get(offset, offset + limit);
     return new LongStorage(newData, newSize, newMask);
+  }
+
+  @Override
+  protected String getPresentCsvString(int index, Function<Object, String> toCsvString) {
+    return String.valueOf(getItem(index));
   }
 }

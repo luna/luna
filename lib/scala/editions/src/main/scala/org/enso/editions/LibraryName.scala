@@ -1,6 +1,7 @@
 package org.enso.editions
 
-import io.circe.{Decoder, DecodingFailure}
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, DecodingFailure, Encoder}
 
 /** Represents a library name that should uniquely identify the library.
   *
@@ -31,14 +32,27 @@ object LibraryName {
     } yield name
   }
 
+  implicit val encoder: Encoder[LibraryName] = { libraryName =>
+    libraryName.toString.asJson
+  }
+
+  private val separator = '.'
+
   /** Creates a [[LibraryName]] from its string representation.
     *
     * Returns an error message on failure.
     */
   def fromString(str: String): Either[String, LibraryName] = {
-    str.split('.') match {
-      case Array(prefix, name) => Right(LibraryName(prefix, name))
-      case _                   => Left(s"`$str` is not a valid library name.")
+    str.split(separator) match {
+      case Array(namespace, name) => Right(LibraryName(namespace, name))
+      case _                      => Left(s"`$str` is not a valid library name.")
     }
   }
+
+  /** Extracts the [[LibraryName]] from a full name of a module. */
+  def fromModuleName(module: String): Option[LibraryName] =
+    module.split(separator) match {
+      case Array(namespace, name, _ @_*) => Some(LibraryName(namespace, name))
+      case _                             => None
+    }
 }

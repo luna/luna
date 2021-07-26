@@ -7,6 +7,12 @@ import org.enso.polyglot.Suggestion
 /** Suggestion instances used in tests. */
 object Suggestions {
 
+  val module: Suggestion.Module = Suggestion.Module(
+    module            = "Test.Main",
+    documentation     = None,
+    documentationHtml = None
+  )
+
   val atom: Suggestion.Atom = Suggestion.Atom(
     externalId        = None,
     module            = "Test.Main",
@@ -95,6 +101,7 @@ object Suggestions {
   )
 
   val all = Seq(
+    module,
     atom,
     method,
     function,

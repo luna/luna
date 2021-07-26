@@ -41,7 +41,7 @@ from Standard.Base.Data.Number.Extensions export all hiding Math, String, Double
 from Standard.Base.Data.Noise export all hiding Noise
 from Standard.Base.Data.Pair export Pair
 from Standard.Base.Data.Range export Range
-from Standard.Base.Data.Text.Extensions export Text, Split_Kind
+from Standard.Base.Data.Text.Extensions export Text, Split_Kind, Line_Ending_Style
 from Standard.Base.Error.Common export all
 from Standard.Base.Error.Extensions export all
 from Standard.Base.Meta.Enso_Project export all

@@ -5,6 +5,7 @@ import java.nio.ByteBuffer
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 import java.util.concurrent.{LinkedBlockingQueue, TimeUnit}
+
 import org.enso.interpreter.runtime.`type`.Constants
 import org.enso.pkg.{Package, PackageManager}
 import org.enso.polyglot._
@@ -138,7 +139,7 @@ class RuntimeSuggestionUpdatesTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, code, false))
+      Api.Request(Api.OpenFileNotification(mainFile, code))
     )
     context.receiveNone shouldEqual None
 
@@ -160,18 +161,15 @@ class RuntimeSuggestionUpdatesTest
       Api.Response(requestId, Api.PushContextResponse(contextId)),
       Api.Response(
         Api.SuggestionsDatabaseModuleUpdateNotification(
-          file    = mainFile,
+          module  = moduleName,
           version = version,
           actions = Vector(Api.SuggestionsDatabaseAction.Clean(moduleName)),
+          exports = Vector(),
           updates = Tree.Root(
             Vector(
               Tree.Node(
                 Api.SuggestionUpdate(
-                  Suggestion.Atom(
-                    None,
-                    moduleName,
-                    "Main",
-                    Seq(),
+                  Suggestion.Module(
                     moduleName,
                     None,
                     None
@@ -230,7 +228,7 @@ class RuntimeSuggestionUpdatesTest
     context.receive(2) should contain theSameElementsAs Seq(
       Api.Response(
         Api.SuggestionsDatabaseModuleUpdateNotification(
-          file = mainFile,
+          module = moduleName,
           version = contentsVersion(
             """from Standard.Builtins import all
               |
@@ -240,6 +238,7 @@ class RuntimeSuggestionUpdatesTest
               |""".stripMargin.linesIterator.mkString("\n")
           ),
           actions = Vector(),
+          exports = Vector(),
           updates = Tree.Root(
             Vector(
               Tree.Node(
@@ -313,7 +312,7 @@ class RuntimeSuggestionUpdatesTest
     context.receive(2) should contain theSameElementsAs Seq(
       Api.Response(
         Api.SuggestionsDatabaseModuleUpdateNotification(
-          file = mainFile,
+          module = moduleName,
           version = contentsVersion(
             """from Standard.Builtins import all
               |
@@ -324,6 +323,7 @@ class RuntimeSuggestionUpdatesTest
               |""".stripMargin.linesIterator.mkString("\n")
           ),
           actions = Vector(),
+          exports = Vector(),
           updates = Tree.Root(
             Vector(
               Tree.Node(
@@ -416,7 +416,7 @@ class RuntimeSuggestionUpdatesTest
     context.receive(2) should contain theSameElementsAs Seq(
       Api.Response(
         Api.SuggestionsDatabaseModuleUpdateNotification(
-          file = mainFile,
+          module = moduleName,
           version = contentsVersion(
             """from Standard.Builtins import all
               |
@@ -428,6 +428,7 @@ class RuntimeSuggestionUpdatesTest
               |""".stripMargin.linesIterator.mkString("\n")
           ),
           actions = Vector(),
+          exports = Vector(),
           updates = Tree.Root(
             Vector(
               Tree.Node(
@@ -528,7 +529,7 @@ class RuntimeSuggestionUpdatesTest
     context.receive(2) should contain theSameElementsAs Seq(
       Api.Response(
         Api.SuggestionsDatabaseModuleUpdateNotification(
-          file = mainFile,
+          module = moduleName,
           version = contentsVersion(
             """from Standard.Builtins import all
               |
@@ -542,6 +543,7 @@ class RuntimeSuggestionUpdatesTest
               |""".stripMargin.linesIterator.mkString("\n")
           ),
           actions = Vector(),
+          exports = Vector(),
           updates = Tree.Root(
             Vector(
               Tree.Node(
@@ -668,7 +670,7 @@ class RuntimeSuggestionUpdatesTest
     context.receive(2) should contain theSameElementsAs Seq(
       Api.Response(
         Api.SuggestionsDatabaseModuleUpdateNotification(
-          file = mainFile,
+          module = moduleName,
           version = contentsVersion(
             """from Standard.Builtins import all
               |
@@ -682,6 +684,7 @@ class RuntimeSuggestionUpdatesTest
               |""".stripMargin.linesIterator.mkString("\n")
           ),
           actions = Vector(),
+          exports = Vector(),
           updates = Tree.Root(
             Vector(
               Tree.Node(
@@ -764,7 +767,7 @@ class RuntimeSuggestionUpdatesTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, false))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveNone shouldEqual None
 
@@ -786,18 +789,15 @@ class RuntimeSuggestionUpdatesTest
       Api.Response(requestId, Api.PushContextResponse(contextId)),
       Api.Response(
         Api.SuggestionsDatabaseModuleUpdateNotification(
-          file    = mainFile,
+          module  = moduleName,
           version = version,
           actions = Vector(Api.SuggestionsDatabaseAction.Clean(moduleName)),
+          exports = Vector(),
           updates = Tree.Root(
             Vector(
               Tree.Node(
                 Api.SuggestionUpdate(
-                  Suggestion.Atom(
-                    None,
-                    moduleName,
-                    "Main",
-                    Seq(),
+                  Suggestion.Module(
                     moduleName,
                     None,
                     None
@@ -906,6 +906,327 @@ class RuntimeSuggestionUpdatesTest
       ),
       context.executionComplete(contextId)
     )
+  }
+
+  it should "index exports" in {
+    val contextId  = UUID.randomUUID()
+    val requestId  = UUID.randomUUID()
+    val moduleName = "Enso_Test.Test.Main"
+
+    val mainCode =
+      """from Standard.Builtins import all
+        |
+        |import Enso_Test.Test.A
+        |from Enso_Test.Test.A export all
+        |
+        |main = IO.println "Hello World!"
+        |""".stripMargin.linesIterator.mkString("\n")
+    val aCode =
+      """from Standard.Builtins import all
+        |
+        |type MyType
+        |    type MkA a
+        |
+        |Integer.fortytwo = 42
+        |
+        |hello = "Hello World!"
+        |""".stripMargin.linesIterator.mkString("\n")
+
+    val mainVersion = contentsVersion(mainCode)
+    val mainFile    = context.writeMain(mainCode)
+    val aVersion    = contentsVersion(aCode)
+    val aFile       = context.writeInSrcDir("A", aCode)
+
+    // create context
+    context.send(Api.Request(requestId, Api.CreateContextRequest(contextId)))
+    context.receive shouldEqual Some(
+      Api.Response(requestId, Api.CreateContextResponse(contextId))
+    )
+
+    // open files
+    context.send(
+      Api.Request(Api.OpenFileNotification(mainFile, mainCode))
+    )
+    context.receiveNone shouldEqual None
+    context.send(
+      Api.Request(Api.OpenFileNotification(aFile, aCode))
+    )
+    context.receiveNone shouldEqual None
+
+    // push main
+    context.send(
+      Api.Request(
+        requestId,
+        Api.PushContextRequest(
+          contextId,
+          Api.StackItem.ExplicitCall(
+            Api.MethodPointer(moduleName, "Enso_Test.Test.Main", "main"),
+            None,
+            Vector()
+          )
+        )
+      )
+    )
+    context.receive(4) should contain theSameElementsAs Seq(
+      Api.Response(requestId, Api.PushContextResponse(contextId)),
+      Api.Response(
+        Api.SuggestionsDatabaseModuleUpdateNotification(
+          module  = "Enso_Test.Test.A",
+          version = aVersion,
+          actions =
+            Vector(Api.SuggestionsDatabaseAction.Clean("Enso_Test.Test.A")),
+          exports = Vector(),
+          updates = Tree.Root(
+            Vector(
+              Tree.Node(
+                Api.SuggestionUpdate(
+                  Suggestion.Module("Enso_Test.Test.A", None, None),
+                  Api.SuggestionAction.Add()
+                ),
+                Vector()
+              ),
+              Tree.Node(
+                Api.SuggestionUpdate(
+                  Suggestion.Atom(
+                    None,
+                    "Enso_Test.Test.A",
+                    "MkA",
+                    List(
+                      Suggestion
+                        .Argument("a", Constants.ANY, false, false, None)
+                    ),
+                    "Enso_Test.Test.A.MkA",
+                    None,
+                    None
+                  ),
+                  Api.SuggestionAction.Add()
+                ),
+                Vector()
+              ),
+              Tree.Node(
+                Api.SuggestionUpdate(
+                  Suggestion.Method(
+                    None,
+                    "Enso_Test.Test.A",
+                    "a",
+                    List(
+                      Suggestion
+                        .Argument(
+                          "this",
+                          "Enso_Test.Test.A.MkA",
+                          false,
+                          false,
+                          None
+                        )
+                    ),
+                    "Enso_Test.Test.A.MkA",
+                    Constants.ANY,
+                    None,
+                    None
+                  ),
+                  Api.SuggestionAction.Add()
+                ),
+                Vector()
+              ),
+              Tree.Node(
+                Api.SuggestionUpdate(
+                  Suggestion.Method(
+                    None,
+                    "Enso_Test.Test.A",
+                    "fortytwo",
+                    List(
+                      Suggestion.Argument(
+                        "this",
+                        Constants.INTEGER,
+                        false,
+                        false,
+                        None
+                      )
+                    ),
+                    Constants.INTEGER,
+                    Constants.ANY,
+                    None,
+                    None
+                  ),
+                  Api.SuggestionAction.Add()
+                ),
+                Vector()
+              ),
+              Tree.Node(
+                Api.SuggestionUpdate(
+                  Suggestion.Method(
+                    None,
+                    "Enso_Test.Test.A",
+                    "hello",
+                    List(
+                      Suggestion.Argument(
+                        "this",
+                        "Enso_Test.Test.A",
+                        false,
+                        false,
+                        None
+                      )
+                    ),
+                    "Enso_Test.Test.A",
+                    Constants.ANY,
+                    None,
+                    None
+                  ),
+                  Api.SuggestionAction.Add()
+                ),
+                Vector()
+              )
+            )
+          )
+        )
+      ),
+      Api.Response(
+        Api.SuggestionsDatabaseModuleUpdateNotification(
+          module  = moduleName,
+          version = mainVersion,
+          actions = Vector(Api.SuggestionsDatabaseAction.Clean(moduleName)),
+          exports = Vector(
+            Api.ExportsUpdate(
+              ModuleExports(
+                "Enso_Test.Test.Main",
+                Set(
+                  ExportedSymbol.Atom("Enso_Test.Test.A", "MkA"),
+                  ExportedSymbol.Method("Enso_Test.Test.A", "hello")
+                )
+              ),
+              Api.ExportsAction.Add()
+            )
+          ),
+          updates = Tree.Root(
+            Vector(
+              Tree.Node(
+                Api.SuggestionUpdate(
+                  Suggestion.Module(
+                    moduleName,
+                    None,
+                    None
+                  ),
+                  Api.SuggestionAction.Add()
+                ),
+                Vector()
+              ),
+              Tree.Node(
+                Api.SuggestionUpdate(
+                  Suggestion.Method(
+                    None,
+                    moduleName,
+                    "main",
+                    List(
+                      Suggestion
+                        .Argument(
+                          "this",
+                          "Enso_Test.Test.Main",
+                          false,
+                          false,
+                          None
+                        )
+                    ),
+                    "Enso_Test.Test.Main",
+                    Constants.ANY,
+                    None,
+                    None
+                  ),
+                  Api.SuggestionAction.Add()
+                ),
+                Vector()
+              )
+            )
+          )
+        )
+      ),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual List("Hello World!")
+
+    // Modify the file
+    context.send(
+      Api.Request(
+        Api.EditFileNotification(
+          mainFile,
+          Seq(
+            TextEdit(
+              model.Range(model.Position(3, 32), model.Position(3, 32)),
+              " hiding hello"
+            )
+          )
+        )
+      )
+    )
+    context.receive(2) should contain theSameElementsAs Seq(
+      Api.Response(
+        Api.SuggestionsDatabaseModuleUpdateNotification(
+          module = moduleName,
+          version = contentsVersion(
+            """from Standard.Builtins import all
+              |
+              |import Enso_Test.Test.A
+              |from Enso_Test.Test.A export all hiding hello
+              |
+              |main = IO.println "Hello World!"
+              |""".stripMargin.linesIterator.mkString("\n")
+          ),
+          actions = Vector(),
+          exports = Vector(
+            Api.ExportsUpdate(
+              ModuleExports(
+                "Enso_Test.Test.Main",
+                Set(ExportedSymbol.Method("Enso_Test.Test.A", "hello"))
+              ),
+              Api.ExportsAction.Remove()
+            )
+          ),
+          updates = Tree.Root(Vector())
+        )
+      ),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual List("Hello World!")
+
+    // Modify the file
+    context.send(
+      Api.Request(
+        Api.EditFileNotification(
+          mainFile,
+          Seq(
+            TextEdit(
+              model.Range(model.Position(2, 0), model.Position(5, 0)),
+              ""
+            )
+          )
+        )
+      )
+    )
+    context.receive(2) should contain theSameElementsAs Seq(
+      Api.Response(
+        Api.SuggestionsDatabaseModuleUpdateNotification(
+          module = moduleName,
+          version = contentsVersion(
+            """from Standard.Builtins import all
+              |
+              |main = IO.println "Hello World!"
+              |""".stripMargin.linesIterator.mkString("\n")
+          ),
+          actions = Vector(),
+          exports = Vector(
+            Api.ExportsUpdate(
+              ModuleExports(
+                "Enso_Test.Test.Main",
+                Set(ExportedSymbol.Atom("Enso_Test.Test.A", "MkA"))
+              ),
+              Api.ExportsAction.Remove()
+            )
+          ),
+          updates = Tree.Root(Vector())
+        )
+      ),
+      context.executionComplete(contextId)
+    )
+    context.consumeOut shouldEqual List("Hello World!")
   }
 
 }

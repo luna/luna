@@ -9,10 +9,8 @@ import org.enso.distribution.{
 
 import java.nio.file.{Files, Path}
 import org.enso.distribution.FileSystem.PathSyntax
-import org.enso.runtimeversionmanager.test.{
-  FakeEnvironment,
-  WithTemporaryDirectory
-}
+import org.enso.runtimeversionmanager.test.FakeEnvironment
+import org.enso.testkit.WithTemporaryDirectory
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

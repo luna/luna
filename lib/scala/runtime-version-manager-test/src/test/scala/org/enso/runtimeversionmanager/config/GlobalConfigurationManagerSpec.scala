@@ -3,10 +3,8 @@ package org.enso.runtimeversionmanager.config
 import io.circe.Json
 import nl.gn0s1s.bump.SemVer
 import org.enso.distribution.DistributionManager
-import org.enso.runtimeversionmanager.test.{
-  FakeEnvironment,
-  WithTemporaryDirectory
-}
+import org.enso.runtimeversionmanager.test.FakeEnvironment
+import org.enso.testkit.WithTemporaryDirectory
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

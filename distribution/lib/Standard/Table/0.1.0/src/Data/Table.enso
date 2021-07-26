@@ -9,6 +9,7 @@ from Standard.Table.Data.Order_Rule as Order_Rule_Module import Order_Rule
 
 polyglot java import org.enso.table.data.table.Table as Java_Table
 polyglot java import org.enso.table.operations.OrderBuilder
+polyglot java import org.enso.table.format.csv.Writer as Csv_Writer
 
 ## Creates a new table from a vector of `[name, items]` pairs.
 
@@ -698,6 +699,77 @@ type Table
     reverse =
         mask = OrderBuilder.buildReversedMask this.row_count
         Table <| this.java_table.applyMask mask
+
+    ## UNSTABLE
+
+       Returns a Text containing this table serialized to CSV.
+
+       Arguments:
+       - include_header: Specifies whether the first line of generated CSV
+         should contain the column names.
+       - always_quote: Specifies whether all fields in the resulting CSV should
+         be quoted. When this is set to `False`, only the fields containing the
+         `separator` in their contents will be quoted.
+       - separator: a sequence used to separate fields within a single row.
+       - line_ending: the style of line-endings to use in the generated CSV.
+
+       > Example
+         Convert a table to CSV.
+
+             import Standard.Examples
+
+             example_to_csv = Examples.inventory_table.to_csv
+    to_csv : Boolean -> Boolean -> Text -> Line_Ending_Style.Line_Ending_Style -> Text
+    to_csv include_header=True always_quote=False separator=',' line_ending=Line_Ending_Style.Unix =
+        Csv_Writer.writeString this.java_table include_header always_quote line_ending.to_text separator .to_csv_field
+
+    ## UNSTABLE
+
+       Serializes this table into CSV and writes it to the specified file.
+
+       Arguments:
+       - file: the file to write the generated CSV contents to. Note that other
+         files may be created or written to if `max_rows_per_file` is used.
+       - include_header: Specifies whether the first line of generated CSV
+         should contain the column names.
+       - always_quote: Specifies whether all fields in the resulting CSV should
+         be quoted. When this is set to `False`, only the fields containing the
+         `separator` in their contents will be quoted.
+       - separator: a sequence used to separate fields within a single row.
+       - line_ending: the style of line-endings to use in the generated CSV.
+       - max_rows_per_file: specifies the maximum number of rows that can be
+         written to a single file. If this option is set and its value is less
+         than the number of rows in this table, the behavior of the `file`
+         argument changes. Instead of writing the contents directly to `file`,
+         its name is parsed and a numbered series of files with names based
+         on `file` is written to instead. For example, if `file` points to
+         `~/my_data/output.csv`, `this` contains 250 rows, and
+         `max_rows_per_file` is set to `100`, 3 different files will be written:
+         - `~/my_data/output_1.csv`, containing rows 0 through 99;
+         - `~/my_data/output_2.csv`, containing rows 100 through 199;
+         - `~/my_data/output_3.csv`, containing rows 200 through 249.
+
+       > Example
+         Write a table to a CSV file.
+
+             import Standard.Examples
+
+             example_to_csv = Examples.inventory_table.write_csv (Enso_Project.data / example_csv_output.csv)
+    write_csv : File.File -> Boolean -> Boolean -> Text -> Line_Ending_Style.Line_Ending_Style -> Nothing | Integer -> Nothing
+    write_csv file include_header=True always_quote=False separator=',' line_ending=Line_Ending_Style.Unix max_rows_per_file=Nothing =
+        Csv_Writer.writePath this.java_table file.absolute.path max_rows_per_file include_header always_quote line_ending.to_text separator .to_csv_field
+
+## UNSTABLE
+
+   Used for converting arbitrary values into fields in CSV files.
+   This default implementation delegates to the `to_text` method.
+Any.to_csv_field = this.to_text
+
+## UNSTABLE
+
+   Used for converting text values into fields in CSV files.
+Text.to_csv_field = this
+
 
 ## Represents a table with grouped rows.
 type Aggregate_Table

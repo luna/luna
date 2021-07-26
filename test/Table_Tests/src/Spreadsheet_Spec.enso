@@ -1,0 +1,39 @@
+from Standard.Base import all
+import Standard.Test
+import Standard.Table
+import Standard.Examples
+
+spec_fmt header file read_method =
+    Test.group header <|
+        Test.specify "should read the specified sheet by index and use correct headers" <|
+            t = read_method file
+            t.columns.map .name . should_equal ['Name', 'Quantity', 'Price']
+            t.at 'Name' . to_vector . should_equal ['blouse', 't-shirt', 'trousers', 'shoes', 'skirt', 'dress']
+            t.at 'Quantity' . to_vector . should_equal [10, 20, Nothing, 30, Nothing, 5]
+            t.at 'Price' . to_vector . should_equal [22.3, 32, 43.2, 54, 31, Nothing]
+
+        Test.specify "should read the specified sheet by index and properly format a table" <|
+            t = read_method file sheet=1 has_header=False prefix='X'
+            t.columns.map .name . should_equal ['X0', 'X1', 'X2', 'X3']
+            t.at 'X0' . to_vector . should_equal [Nothing, 10, Nothing, Nothing, Nothing, Nothing]
+            t.at 'X1' . to_vector . should_equal ['baz', 20, Nothing, 'bar', Nothing, 30]
+            t.at 'X2' . to_vector . should_equal [Nothing, Nothing, Nothing, Nothing, Nothing, Nothing]
+            t.at 'X3' . to_vector . should_equal [Nothing, Nothing, Nothing, Nothing, 'foo', Nothing]
+
+        Test.specify "should read the specified sheet by name and properly handle dates" <|
+            t = read_method file sheet='Dates'
+            t.columns.map .name . should_equal ['Student Name', 'Enrolment Date']
+            t.at 'Enrolment Date' . map .day . to_vector . should_equal [2, 26, 4, 24, 31, 7]
+
+        Test.specify "should read an empty table" <|
+            t = read_method file sheet="Empty"
+            t.columns.length.should_equal 0
+
+        Test.specify "should gracefully handle duplicate column names and formulas" <|
+            t = read_method file sheet="Duplicate Columns"
+            t.columns.map .name . should_equal ['Item', 'Price', 'Quantity', 'Price 1']
+            t.at 'Price 1' . to_vector . should_equal [20, 40, 0, 60, 0, 10]
+
+spec =
+    here.spec_fmt 'XLSX reading' Examples.xlsx .read_xlsx
+    here.spec_fmt 'XLS reading' Examples.xls .read_xls

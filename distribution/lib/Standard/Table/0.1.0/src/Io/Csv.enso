@@ -1,6 +1,5 @@
 from Standard.Base import all
-
-import Standard.Table.Data.Table
+import Standard.Table
 
 polyglot java import org.enso.table.format.csv.Parser
 polyglot java import java.io.ByteArrayInputStream

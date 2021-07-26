@@ -8,8 +8,11 @@ import org.enso.table.data.column.builder.string.PrimInferredStorageBuilder;
 import org.enso.table.data.index.DefaultIndex;
 import org.enso.table.data.table.Column;
 import org.enso.table.data.table.Table;
+import org.enso.table.util.NameDeduplicator;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /** A CSV parser. */
 public class Parser {
@@ -66,10 +69,14 @@ public class Parser {
       }
     }
     Column[] columns = new Column[builders.length];
+    List<String> names = new ArrayList<>(builders.length);
     for (int i = 0; i < builders.length; i++) {
-      String name = header != null ? header[i] : unnamedColumnPrefix + i;
+      names.add(header != null ? header[i] : unnamedColumnPrefix + i);
+    }
+    names = NameDeduplicator.deduplicate(names);
+    for (int i = 0; i < builders.length; i++) {
       Storage col = builders[i].seal();
-      columns[i] = new Column(name, new DefaultIndex(col.size()), col);
+      columns[i] = new Column(names.get(i), new DefaultIndex(col.size()), col);
     }
     return new Table(columns);
   }

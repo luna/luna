@@ -2,12 +2,7 @@ package org.enso.librarymanager
 
 import nl.gn0s1s.bump.SemVer
 import org.enso.editions.Editions.Repository
-import org.enso.editions.{
-  DefaultEnsoVersion,
-  Editions,
-  LibraryName,
-  LibraryVersion
-}
+import org.enso.editions.{Editions, LibraryName, LibraryVersion}
 import org.enso.librarymanager.local.LocalLibraryProvider
 import org.enso.testkit.EitherValue
 import org.scalatest.Inside
@@ -22,40 +17,54 @@ class LibraryResolverSpec
     with EitherValue
     with Inside {
   "LibraryResolver" should {
-    val mainRepo = Repository.make("main", "https://example.com/main").get
+    val mainRepo = Repository("main", "https://example.com/main")
     val parentEdition = Editions.Resolved.Edition(
       parent        = None,
-      engineVersion = Some(DefaultEnsoVersion),
+      engineVersion = Some(SemVer(0, 0, 0)),
       repositories  = Map("main" -> mainRepo),
       libraries = Map(
-        "Standard.Base" -> Editions.Resolved
-          .PublishedLibrary("Standard.Base", SemVer(4, 5, 6), mainRepo)
+        LibraryName("Standard", "Base") -> Editions.Resolved
+          .PublishedLibrary(
+            LibraryName("Standard", "Base"),
+            SemVer(4, 5, 6),
+            mainRepo
+          )
       )
     )
-    val customRepo = Repository.make("custom", "https://example.com/custom").get
+    val customRepo = Repository("custom", "https://example.com/custom")
     val currentEdition = Editions.Resolved.Edition(
       parent        = Some(parentEdition),
       engineVersion = None,
       repositories  = Map("custom" -> customRepo),
       libraries = Map(
-        "Foo.Main" -> Editions.Resolved
-          .PublishedLibrary("Foo.Main", SemVer(1, 0, 0), mainRepo),
-        "Foo.My" -> Editions.Resolved
-          .PublishedLibrary("Foo.My", SemVer(2, 0, 0), customRepo),
-        "Foo.Local" -> Editions.Resolved.LocalLibrary("Foo.Local")
+        LibraryName("Foo", "Main") -> Editions.Resolved
+          .PublishedLibrary(
+            LibraryName("Foo", "Main"),
+            SemVer(1, 0, 0),
+            mainRepo
+          ),
+        LibraryName("Foo", "My") -> Editions.Resolved
+          .PublishedLibrary(
+            LibraryName("Foo", "My"),
+            SemVer(2, 0, 0),
+            customRepo
+          ),
+        LibraryName("Foo", "Local") -> Editions.Resolved.LocalLibrary(
+          LibraryName("Foo", "Local")
+        )
       )
     )
 
-    case class FakeLocalLibraryProvider(fixtures: Map[String, Path])
+    case class FakeLocalLibraryProvider(fixtures: Map[LibraryName, Path])
         extends LocalLibraryProvider {
       override def findLibrary(libraryName: LibraryName): Option[Path] =
-        fixtures.get(libraryName.qualifiedName)
+        fixtures.get(libraryName)
     }
 
     val localLibraries = Map(
-      "Foo.My"        -> Path.of("./Foo/My"),
-      "Foo.Local"     -> Path.of("./Foo/Local"),
-      "Standard.Base" -> Path.of("./Standard/Base")
+      LibraryName("Foo", "My")        -> Path.of("./Foo/My"),
+      LibraryName("Foo", "Local")     -> Path.of("./Foo/Local"),
+      LibraryName("Standard", "Base") -> Path.of("./Standard/Base")
     )
 
     val resolver = LibraryResolver(FakeLocalLibraryProvider(localLibraries))

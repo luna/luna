@@ -234,6 +234,31 @@ them), it will result in the following merged directory structure:
 └── LICENSE.md
 ```
 
+### Publishing
+
+To be able to publish libraries to a repository, the repository must provide an
+upload endpoint which satisfies the following requirements.
+
+The endpoint should get the library name and version from the query parameters:
+`namespace`, `name` and `version`.
+
+It should check any authentication data attached to the query and verify that
+the user has sufficient privileges to upload the library for that `namespace`.
+
+Currently, we use a static check which checks an `Auth-Token` header for a
+pre-determined secret key, but any other authentication schemes can be used, as
+long as they are supported by the GUI or CLI.
+
+Then, the server must check if a library with the given name and version
+combination already exists. If the library already exists, the request should be
+rejected with `409 Conflict` status code indicating that a conflicting library
+is already in the repository.
+
+If the request goes through, the server should create a directory for the
+library and put any files attached to the request there. Each request should
+always contain `package.yaml` and `manifest.yaml` files attached and at least
+one sub-archive, usually called `main.tgz`.
+
 ## Editions Repository
 
 The Editions repository has a very simple structure.

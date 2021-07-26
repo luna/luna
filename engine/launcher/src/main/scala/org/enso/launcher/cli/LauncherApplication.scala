@@ -312,6 +312,64 @@ object LauncherApplication {
       }
     }
 
+  private def uploadLibraryCommand: Command[Config => Int] =
+    Command(
+      "publish-library",
+      "Publish an Enso library to a repository. " +
+      "If `auto-confirm` is set, this will install missing engines or " +
+      "runtimes without asking."
+    ) {
+      val pathOpt = Opts.optionalArgument[Path](
+        "PATH",
+        "If PATH is provided, the project at this path or the closest one of " +
+        "its ancestors that contains an Enso project, is uploaded. If not, " +
+        "the project to upload is searched for in the current directory and " +
+        "its ancestors."
+      )
+      val uploadUrlOpt = Opts.optionalParameter[String](
+        "upload-url",
+        "URL",
+        "Upload URL of the repository to upload the library to.",
+        showInUsage = true
+      )
+      val authTokenOpt = Opts.optionalParameter[String](
+        "auth-token",
+        "TOKEN",
+        "An optional token to add to request headers for use in " +
+        "authorization. If this parameter is not set, the ENSO_AUTH_TOKEN " +
+        "environment variable is checked."
+      )
+      val additionalArgs = Opts.additionalArguments()
+      (
+        pathOpt,
+        uploadUrlOpt,
+        authTokenOpt,
+        engineLogLevel,
+        systemJVMOverride,
+        jvmOpts,
+        additionalArgs
+      ) mapN {
+        (
+          path,
+          uploadUrl,
+          authToken,
+          engineLogLevel,
+          systemJVMOverride,
+          jvmOpts,
+          additionalArgs
+        ) => (config: Config) =>
+          Launcher(config).uploadLibrary(
+            path                = path,
+            uploadUrl           = uploadUrl,
+            authToken           = authToken,
+            logLevel            = engineLogLevel,
+            useSystemJVM        = systemJVMOverride,
+            jvmOpts             = jvmOpts,
+            additionalArguments = additionalArgs
+          )
+      }
+    }
+
   private def installEngineCommand: Command[Config => Int] =
     Command(
       "engine",
@@ -471,7 +529,7 @@ object LauncherApplication {
 
   private def topLevelOpts: Opts[() => TopLevelBehavior[Config]] = {
     val version =
-      Opts.flag("version", 'V', "Display version.", showInUsage = true)
+      Opts.flag("version", 'V', "Display version.", showInUsage = false)
     val json = Opts.flag(
       GlobalCLIOptions.USE_JSON,
       "Use JSON instead of plain text for version output.",
@@ -604,6 +662,7 @@ object LauncherApplication {
       replCommand,
       runCommand,
       languageServerCommand,
+      uploadLibraryCommand,
       defaultCommand,
       installCommand,
       uninstallCommand,

@@ -42,22 +42,22 @@ trait Editions {
       * It should consist of a prefix followed by a dot an the library name, for
       * example `Prefix.Library_Name`.
       */
-    def qualifiedName: String
+    def name: LibraryName
   }
 
   /** Represents a local library. */
-  case class LocalLibrary(override val qualifiedName: String) extends Library
+  case class LocalLibrary(override val name: LibraryName) extends Library
 
   /** Represents a specific version of the library that is published in a
     * repository.
     *
-    * @param qualifiedName the qualified name of the library
+    * @param name the qualified name of the library
     * @param version the exact version of the library that should be used
     * @param repository the recommended repository to download the library from,
     *                   if it is not yet cached
     */
   case class PublishedLibrary(
-    override val qualifiedName: String,
+    override val name: LibraryName,
     version: SemVer,
     repository: LibraryRepositoryType
   ) extends Library
@@ -75,9 +75,9 @@ trait Editions {
     */
   case class Edition(
     parent: Option[NestedEditionType]              = None,
-    engineVersion: Option[EnsoVersion]             = None,
+    engineVersion: Option[SemVer]                  = None,
     repositories: Map[String, Editions.Repository] = Map.empty,
-    libraries: Map[String, Library]                = Map.empty
+    libraries: Map[LibraryName, Library]           = Map.empty
   ) {
     if (parent.isEmpty && engineVersion.isEmpty)
       throw new IllegalArgumentException(
@@ -134,13 +134,30 @@ object Editions {
       * is either the version override directly specified in the edition or the
       * version implied by its parent.
       */
-    def getEngineVersion: EnsoVersion = edition.engineVersion.getOrElse {
+    def getEngineVersion: SemVer = edition.engineVersion.getOrElse {
       val parent = edition.parent.getOrElse {
         throw new IllegalStateException(
           "Internal error: Resolved edition does not imply an engine version."
         )
       }
       parent.getEngineVersion
+    }
+
+    /** Returns a mapping of all libraries defined in the edition, including any
+      * libraries defined in parent editions (also taking into account the
+      * overrides).
+      */
+    def getAllDefinedLibraries: Map[LibraryName, LibraryVersion] = {
+      val parent =
+        edition.parent.map(_.getAllDefinedLibraries).getOrElse(Map.empty)
+      edition.libraries.foldLeft(parent) { case (map, (name, lib)) =>
+        val version = lib match {
+          case Resolved.LocalLibrary(_) => LibraryVersion.Local
+          case Resolved.PublishedLibrary(_, version, repository) =>
+            LibraryVersion.Published(version, repository)
+        }
+        map.updated(name, version)
+      }
     }
   }
 

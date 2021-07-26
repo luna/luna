@@ -165,7 +165,7 @@ class RuntimeStdlibTest
 
     // open file
     context.send(
-      Api.Request(Api.OpenFileNotification(mainFile, contents, true))
+      Api.Request(Api.OpenFileNotification(mainFile, contents))
     )
     context.receiveOne shouldEqual None
 
@@ -188,29 +188,56 @@ class RuntimeStdlibTest
         context.executionComplete(contextId),
         timeout = 60
       )
+    // sanity check
     responses should contain allOf (
       Api.Response(requestId, Api.PushContextResponse(contextId)),
       context.executionComplete(contextId)
     )
 
+    // check that the suggestion notifications are received
     val suggestions = responses.collect {
       case Api.Response(
             None,
-            Api.SuggestionsDatabaseModuleUpdateNotification(_, _, as, xs)
+            Api.SuggestionsDatabaseModuleUpdateNotification(_, _, as, _, xs)
           ) =>
         (xs.nonEmpty || as.nonEmpty) shouldBe true
     }
     suggestions.isEmpty shouldBe false
 
+    // check that the Standard.Base library is indexed
+    val stdlibSuggestions = responses.collect {
+      case Api.Response(
+            None,
+            Api.SuggestionsDatabaseModuleUpdateNotification(
+              module,
+              _,
+              as,
+              _,
+              xs
+            )
+          ) if module.contains("Vector") =>
+        (xs.nonEmpty || as.nonEmpty) shouldBe true
+        xs.toVector.head.suggestion.module shouldEqual "Standard.Base.Data.Vector"
+    }
+    stdlibSuggestions.nonEmpty shouldBe true
+
+    // check that builtins are indexed
     val builtinsSuggestions = responses.collect {
       case Api.Response(
             None,
-            Api.SuggestionsDatabaseModuleUpdateNotification(file, _, as, xs)
-          ) if file.getPath.contains("Builtins") =>
+            Api.SuggestionsDatabaseModuleUpdateNotification(
+              module,
+              _,
+              as,
+              _,
+              xs
+            )
+          ) if module.contains("Builtins") =>
         (xs.nonEmpty || as.nonEmpty) shouldBe true
     }
     builtinsSuggestions.length shouldBe 1
 
+    // check LibraryLoaded notifications
     val contentRootNotifications = responses.collect {
       case Api.Response(
             None,

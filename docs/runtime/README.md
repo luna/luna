@@ -50,3 +50,5 @@ broken up as follows:
 - [**Searcher:**](./searcher.md) An explanation of how the searcher works.
 - [**Instruments:**](./instruments.md) An explanation of how we compile Truffle
   instrumentation.
+- [**IR Caching:**](./ir-caching.md) An explanation of how we cache the compiler
+  IR to reduce startup times.

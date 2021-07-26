@@ -21,6 +21,12 @@ spec = Test.group "Examples" <|
     Test.specify "should allow getting an example CSV file" <|
         Examples.csv.exists.should_be_true
 
+    Test.specify "should allow getting an example XLS file" <|
+        Examples.xls.exists.should_be_true
+
+    Test.specify "should allow getting an example XLSX file" <|
+        Examples.xlsx.exists.should_be_true
+
     Test.specify "should provide access to the CSV path" <|
         (Examples.csv_path.length > 0) . should_be_true
 

@@ -4,7 +4,7 @@ import java.nio.file.Path
 import io.circe._
 import io.circe.parser._
 import org.enso.cli.task.TaskProgress
-import org.enso.runtimeversionmanager.http.{
+import org.enso.downloader.http.{
   APIResponse,
   HTTPDownload,
   HTTPRequestBuilder,

@@ -1,9 +1,11 @@
 package org.enso.languageserver.protocol.json
 
 import akka.actor.{ActorRef, ActorSystem}
+import org.enso.distribution.EditionManager
 import org.enso.jsonrpc.ClientControllerFactory
 import org.enso.languageserver.boot.resource.InitializationComponent
 import org.enso.languageserver.data.Config
+import org.enso.languageserver.libraries.EditionReferenceResolver
 
 import java.util.UUID
 
@@ -26,6 +28,11 @@ class JsonConnectionControllerFactory(
   stdErrController: ActorRef,
   stdInController: ActorRef,
   runtimeConnector: ActorRef,
+  idlenessMonitor: ActorRef,
+  projectSettingsManager: ActorRef,
+  localLibraryManager: ActorRef,
+  editionReferenceResolver: EditionReferenceResolver,
+  editionManager: EditionManager,
   config: Config
 )(implicit system: ActorSystem)
     extends ClientControllerFactory {
@@ -38,19 +45,24 @@ class JsonConnectionControllerFactory(
   override def createClientController(clientId: UUID): ActorRef =
     system.actorOf(
       JsonConnectionController.props(
-        clientId,
-        mainComponent,
-        bufferRegistry,
-        capabilityRouter,
-        fileManager,
-        contentRootManager,
-        contextRegistry,
-        suggestionsHandler,
-        stdOutController,
-        stdErrController,
-        stdInController,
-        runtimeConnector,
-        config
+        connectionId             = clientId,
+        mainComponent            = mainComponent,
+        bufferRegistry           = bufferRegistry,
+        capabilityRouter         = capabilityRouter,
+        fileManager              = fileManager,
+        contentRootManager       = contentRootManager,
+        contextRegistry          = contextRegistry,
+        suggestionsHandler       = suggestionsHandler,
+        stdOutController         = stdOutController,
+        stdErrController         = stdErrController,
+        stdInController          = stdInController,
+        runtimeConnector         = runtimeConnector,
+        idlenessMonitor          = idlenessMonitor,
+        projectSettingsManager   = projectSettingsManager,
+        localLibraryManager      = localLibraryManager,
+        editionReferenceResolver = editionReferenceResolver,
+        editionManager           = editionManager,
+        languageServerConfig     = config
       )
     )
 }
