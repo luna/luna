@@ -1,0 +1,42 @@
+## With all your data combined, the next step is to get insight from your data.
+   This is the process of transformation, shaping it into a form that tells you
+   what you want to know.
+
+   Enso provides a whole host of utilities for data transformation. These
+   include being able to to perform arithmetic and text operations on columns,
+   as well as the ability to mask columns based on criteria you specify.
+
+   > Example
+     Select only the items where more than half the stock has been sold.
+
+         import Standard.Examples
+
+         example_where =
+             table = Examples.inventory_table
+             mask = (table.at "sold_stock" > (table.at "total_stock" / 2))
+             table.where mask
+
+   > Example
+     Multiply each element of the column by itself.
+
+         import Standard.Examples
+
+         example_map = Examples.integer_column.map (x -> x * x)
+
+   > Example
+     Sort the shop inventory based on the per-item price in descending order and
+     placing missing values at the top of the table.
+
+         import Standard.Examples
+
+         example_sort =
+            table = Examples.inventory_table
+            table.sort by="price" order=Sort_Order.Descending missing_last=false
+
+   > Example
+     Add two columns to each other.
+
+         import Standard.Examples
+
+         example_plus = Examples.decimal_column + Examples.integer_column
+

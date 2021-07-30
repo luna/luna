@@ -44,6 +44,7 @@ class Runner(
     path: Path,
     name: String,
     engineVersion: SemVer,
+    projectTemplate: Option[String],
     authorName: Option[String],
     authorEmail: Option[String],
     additionalArguments: Seq[String]
@@ -53,13 +54,15 @@ class Runner(
         authorName.map(Seq("--new-project-author-name", _)).getOrElse(Seq())
       val authorEmailOption =
         authorEmail.map(Seq("--new-project-author-email", _)).getOrElse(Seq())
+      val templateOption =
+        projectTemplate.map(Seq("--new-project-template", _)).getOrElse(Seq())
       val arguments =
         Seq(
           "--new",
           path.toAbsolutePath.normalize.toString,
           "--new-project-name",
           name
-        ) ++ authorNameOption ++ authorEmailOption ++ additionalArguments
+        ) ++ templateOption ++ authorNameOption ++ authorEmailOption ++ additionalArguments
       // TODO [RW] reporting warnings to the IDE (#1710)
       if (Engine.isNightly(engineVersion)) {
         Logger[Runner].warn(

@@ -1,0 +1,26 @@
+## Textual data is one of the most common formats found during data analysis.
+   This makes it all the more important that you have robust tools to manipulate
+   the text as you need.
+
+   Enso's text representation is highly efficient and comes with a robust suite
+   of tools for processing the text in any way you can think of.
+
+   > Example
+     Split the text on whitespace into a vector of items.
+
+         "ham eggs cheese tomatoes".split Split_Kind.Whitespace
+
+   > Example
+     Getting the words in the sentence "I have not one, but two cats."
+
+        "I have not one, but two cats.".words
+
+   > Example
+     See if the text "Hello" contains the text "ell".
+
+         "Hello".contains "ell"
+
+   > Example
+     Replace letters in the text "aaa".
+
+         'aaa'.replace 'aa' 'b' == 'ba'

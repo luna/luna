@@ -5,7 +5,8 @@ import Standard.Base.System.Process.Exit_Code
 from Standard.Base.Data.Vector import Vector
 from Standard.Builtins import Array, System, True, False
 
-## UNSTABLE
+## ALIAS Run a Command
+   UNSTABLE
 
    Call a command with a list of arguments.
 

@@ -1,0 +1,24 @@
+from Standard.Base import all
+
+polyglot java import org.enso.table.format.xlsx.Writer
+
+## Specifies the behavior of XLSX writing for pre-existing sheets.
+type Spreadsheet_Write_Mode
+    ## Append new data to the existing sheet, such that the new data starts
+       after the last row containing any data.
+    type Append
+    
+    ## Create a new sheet, renaming it such that there is no clash with
+       exisitng sheets.
+    type Create
+    
+    ## Remove all contents from the existing sheet and write the data to it.
+    type Overwrite
+
+    ## PRIVATE
+
+       Converts this into a Java-side representation.
+    to_java = case this of
+        Append -> Writer.WriteMode.APPEND
+        Create -> Writer.WriteMode.CREATE_SHEET
+        Overwrite -> Writer.WriteMode.OVERWRITE_SHEET

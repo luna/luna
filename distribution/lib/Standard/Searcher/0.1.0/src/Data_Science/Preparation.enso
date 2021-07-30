@@ -1,0 +1,39 @@
+## As nice as it would be to have your data all ready for analysis, this is
+   rarely the case. The process of getting it ready to provide insights is known
+   as data preparation.
+
+   This section of the library contains a curated selection of tools that help
+   you to get the best out of your data. From dealing with missing values to
+   getting rid of erroneous rows and columns, the tools here are specialised for
+   getting the most out of your data.
+
+   > Example
+     Get the item name and price columns from the shop inventory.
+
+         import Standard.Examples
+
+         example_select =
+             Examples.inventory_table.select ["item_name", "price"]
+
+   > Example
+     Remove any rows that contain missing values from the table.
+
+         import Standard.Examples
+
+         example_drop_missing_rows =
+             Examples.inventory_table.drop_missing_rows
+
+   > Example
+     Remove any columns that contain missing values from the table.
+
+         import Standard.Examples
+
+         example_drop_missing_cols =
+             Examples.inventory_table.drop_missing_columns
+
+   > Example
+     Fill missing values in a column with the value 20.5.
+
+         import Standard.Examples
+
+         example_fill_missing = Examples.decimal_column.fill_missing 20.5

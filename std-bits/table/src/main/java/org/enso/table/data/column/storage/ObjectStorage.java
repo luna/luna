@@ -3,8 +3,10 @@ package org.enso.table.data.column.storage;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.enso.table.data.column.operation.map.MapOpStorage;
 import org.enso.table.data.column.operation.map.UnaryMapOperation;
 import org.enso.table.data.index.Index;
@@ -159,5 +161,10 @@ public class ObjectStorage extends Storage {
   @Override
   protected String getPresentCsvString(int index, Function<Object, String> toCsvString) {
     return toCsvString.apply(getItem(index));
+  }
+
+  @Override
+  public void writeSpreadsheetCell(int index, Cell cell, BiConsumer<Object, Cell> writeCell) {
+    writeCell.accept(getItem(index), cell);
   }
 }

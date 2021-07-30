@@ -231,7 +231,9 @@ type Marshalling_Error
         Missing_Field_Error _ field _ ->
             "Missing field in Json: the field `" + field.to_text "` was missing in the json."
 
-## Generically converts an atom into a JSON object.
+## ALIAS To JSON
+
+   Generically converts an atom into a JSON object.
 
    The input atom is converted into a JSON object, with a `"type"` field set to
    the atom's type name and all other fields serialized with their name as

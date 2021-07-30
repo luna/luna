@@ -240,7 +240,9 @@ type Column
     < : Column | Any -> Column
     < other = here.run_vectorized_binary_op this "<" (<) other
 
-    ## Element-wise addition.
+    ## ALIAS Add Columns
+
+       Element-wise addition.
 
        Arguments:
        - other: The value to add to `this`. If `other` is a column, the addition
@@ -266,7 +268,9 @@ type Column
     + : Column | Any -> Column
     + other = here.run_vectorized_binary_op this '+' (+) other
 
-    ## Element-wise subtraction.
+    ## ALIAS Subtract Columns
+
+       Element-wise subtraction.
 
        Arguments:
        - other: The value to subtract from `this`. If `other` is a column, the
@@ -292,7 +296,9 @@ type Column
     - : Column | Any -> Column
     - other = here.run_vectorized_binary_op this '-' (-) other
 
-    ## Element-wise multiplication.
+    ## ALIAS Multiply Columns
+
+       Element-wise multiplication.
 
        Arguments:
        - other: The value to multiply `this` by. If `other` is a column, the
@@ -318,7 +324,9 @@ type Column
     * : Column | Any -> Column
     * other = here.run_vectorized_binary_op this '*' (*) other
 
-    ## Element-wise division.
+    ## ALIAS Divide Columns
+
+       Element-wise division.
 
        Arguments:
        - other: The value to divide `this` by. If `other` is a column, the
@@ -344,7 +352,9 @@ type Column
     / : Column | Any -> Column
     / other = here.run_vectorized_binary_op this '/' (/) other
 
-    ## Element-wise boolean conjunction.
+    ## ALIAS AND Columns
+
+       Element-wise boolean conjunction.
 
        Arguments:
        - other: The value to compute the conjunction of `this` with. If `other`
@@ -372,7 +382,9 @@ type Column
     && other =
         here.run_vectorized_binary_op this "&&" (&&) other
 
-    ## Element-wise boolean disjunction.
+    ## ALIAS OR Columns
+
+       Element-wise boolean disjunction.
 
        Arguments:
        - other: The value to compute the disjunction of `this` with. If `other`
@@ -400,7 +412,9 @@ type Column
     || other =
         here.run_vectorized_binary_op this "||" (||) other
 
-    ## Boolean negation of each element in this column.
+    ## ALIAS NOT Columns
+
+       Boolean negation of each element in this column.
 
        > Example
          Negate the elements of a column.
@@ -435,7 +449,9 @@ type Column
     is_present : Column
     is_present = this.is_missing.not
 
-    ## Returns a new column where missing values have been replaced with the
+    ## ALIAS Fill Missing
+
+       Returns a new column where missing values have been replaced with the
        provided default.
 
        Arguments:
@@ -456,7 +472,9 @@ type Column
         col = Java_Column.new name index new_st
         Column col
 
-    ## Returns a new column without rows that had missing values.
+    ## ALIAS Drop Missing
+
+       Returns a new column without rows that had missing values.
 
        > Example
          Drop missing values from a column.
@@ -546,7 +564,9 @@ type Column
     contains other =
         here.run_vectorized_binary_op this "contains" (a -> b -> a.contains b) other
 
-    ## Applies `function` to each item in this column and returns the column
+    ## ALIAS Transform Column
+
+       Applies `function` to each item in this column and returns the column
        of results.
 
        Arguments:
@@ -566,7 +586,9 @@ type Column
         col = Java_Column.new "Result" index new_st
         Column col
 
-    ## Applies `function` to consecutive pairs of elements of `this` and `that`
+    ## ALIAS Transform Columns
+
+       Applies `function` to consecutive pairs of elements of `this` and `that`
        and returns a column of results.
 
        Arguments:
@@ -589,7 +611,9 @@ type Column
         rs = s1.zip Nothing function s2
         Column (Java_Column.new "Result" ix rs)
 
-    ## Returns a new column, containing the same elements as `this`, but with
+    ## ALIAS Rename Column
+
+       Returns a new column, containing the same elements as `this`, but with
        the given name.
 
        Arguments:
@@ -808,7 +832,9 @@ type Column
         data = ['data', this.to_vector.take_start max_data]
         Json.from_pairs [size, name, data] . to_text
 
-    ## Sums the values in this column.
+    ## ALIAS Sum Columns
+
+       Sums the values in this column.
 
        > Example
          Sum the values in a column.
@@ -819,7 +845,9 @@ type Column
     sum : Any
     sum = this.java_column.aggregate 'sum' (x-> Vector.Vector x . reduce (+)) True
 
-    ## Computes the maximum element of this column.
+    ## ALIAS Max Columns
+
+       Computes the maximum element of this column.
 
        > Example
          Compute the maximum value of a column.
@@ -831,7 +859,9 @@ type Column
     max =
         this.java_column.aggregate 'max' (x-> Vector.Vector x . reduce Math.max) True
 
-    ## Computes the minimum element of this column.
+    ## ALIAS Min Columns
+
+       Computes the minimum element of this column.
 
        > Example
          Compute the minimum value of a column.
@@ -843,7 +873,9 @@ type Column
     min =
         this.java_column.aggregate 'min' (x-> Vector.Vector x . reduce Math.min) True
 
-    ## Computes the mean of non-missing elements of this column.
+    ## ALIAS Mean Columns
+
+       Computes the mean of non-missing elements of this column.
 
        > Example
          Compute the mean value of a column.

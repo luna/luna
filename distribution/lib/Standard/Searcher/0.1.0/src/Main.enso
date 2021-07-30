@@ -1,0 +1,58 @@
+## A library that defines the documentation for the hand-curated searcher
+   categories.
+
+   Note that there is _no functional code_ in these modules, and they should
+   never be imported directly. They are used only to provide a consistent and
+   simple mechanism for placing documentation for these categories within the
+   suggestions database.
+
+from Standard.Base import all
+
+import Standard.Base.Error.Extensions as Error
+
+## ALIAS Text Input
+
+   Creating text in Enso is as simple as adding a node that contains the text
+   that you would like to create.
+
+   > Example
+     Creating a node containing the text "Hello, Enso!".
+
+         "Hello, Enso!"
+text_input = Error.unimplemented "This function should not be called."
+
+## ALIAS Number Input
+
+   Creating a number in Enso is as simple as adding a node that contains the
+   number that you would like to create.
+
+   Enso supports both integer and decimal literals.
+
+   > Example
+     Creating a node containing the integer 0.
+
+         0
+
+   > Example
+     Creating a node containing the decimal 0.0.
+
+         0.0
+number_input = Error.unimplemented "This function should not be called."
+
+## ALIAS Table Input
+
+   Creating a table in Enso is usually done directly from data. Nevertheless, it
+   can be useful to create tables manually.
+
+   > Example
+     Creating a node containing a table with two columns, one titled "name", and
+     the other titled "stars".
+
+         import Standard.Table
+
+         example_table_input =
+             column_1 = ["name", "Enso"]
+             column_2 = ["stars", 5000]
+             table = Table.new [column_1, column_2]
+table_input = Error.unimplemented "This function should not be called."
+

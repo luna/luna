@@ -1,0 +1,71 @@
+## Enso is, first and foremost, a tool for putting you in direct contact with
+   your data, and the Data Science tools are central to that workflow.
+
+   This section contains the functionality that you need for working with data,
+   from loading it into your workflow, to cleaning and transforming it, to
+   visualising it and getting aggregate results from it, and much more besides.
+
+   > Example
+     Read the active sheet of an XLSX from disk and convert it into a table.
+
+         import Standard.Table
+         import Standard.Examples
+
+         example_xlsx_to_table = Examples.xlsx.read_xlsx
+
+   > Example
+     Write a table to an XLSX file.
+
+         import Standard.Examples
+
+         example_to_xlsx =
+             path = Enso_Project.data / example_xlsx_output.xlsx
+             Examples.inventory_table.write_xlsx path
+
+   > Example
+     Join multiple tables together. It joins tables on their indices, so we need
+     to make sure the indices are correct.
+
+         import Standard.Examples
+         import Standard.Table
+
+         example_join =
+             table_1 = Examples.inventory_table
+             table_2 = Examples.popularity_table
+             Table.join [table_1, table_2]
+
+   > Example
+     Select only the items where more than half the stock has been sold.
+
+         import Standard.Examples
+
+         example_where =
+             table = Examples.inventory_table
+             mask = (table.at "sold_stock" > (table.at "total_stock" / 2))
+             table.where mask
+
+   > Example
+     Sort the shop inventory based on the total stock, using the number sold to
+     break ties in descending order.
+
+         import Standard.Examples
+
+         example_sort =
+             table = Examples.inventory_table
+             table.sort by=["total_stock", "sold_stock"] order=Sort_Order.Descending
+
+   > Example
+     Compute the number of transactions that each item has participated in, as
+     well as the number of each item sold across those transactions.
+
+         import Standard.Examples
+         import Standard.Table
+
+         example_group =
+             transactions = Examples.transactions_table
+             item_names = Examples.inventory_table.at "item_name"
+             aggregated = transactions.group by="item_id"
+             num_transactions = aggregated.at "transaction_id" . reduce .length . rename "transaction_count"
+             num_sold = aggregated.at "quantity" . reduce .sum . rename "num_sold"
+             Table.join [item_names, num_transactions, num_sold]
+

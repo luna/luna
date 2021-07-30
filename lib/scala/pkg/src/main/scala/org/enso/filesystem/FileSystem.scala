@@ -1,7 +1,14 @@
 package org.enso.filesystem
 
 import scala.jdk.CollectionConverters._
-import java.io.{BufferedReader, BufferedWriter, File, IOException}
+import java.io.{
+  BufferedReader,
+  BufferedWriter,
+  File,
+  IOException,
+  InputStream,
+  OutputStream
+}
 import java.nio.file.Files
 import java.nio.file.attribute.{BasicFileAttributes, FileTime}
 import java.util.stream
@@ -63,6 +70,22 @@ trait FileSystem[F] {
     * @return
     */
   def getName(file: F): String
+
+  /** Creates a new input stream for the given file.
+    *
+    * @param file the file to open.
+    * @return an input stream for `file`.
+    */
+  @throws[IOException]
+  def newInputStream(file: F): InputStream
+
+  /** Creates a new output stream for the given file.
+    *
+    * @param file the file to open.
+    * @return an output stream for `file`.
+    */
+  @throws[IOException]
+  def newOutputStream(file: F): OutputStream
 
   /** Creates a new buffered writer for the given file.
     *
@@ -140,6 +163,10 @@ object FileSystem {
 
     def getName: String = fs.getName(file)
 
+    def newInputStream: InputStream = fs.newInputStream(file)
+
+    def newOutputStream: OutputStream = fs.newOutputStream(file)
+
     def newBufferedWriter: BufferedWriter = fs.newBufferedWriter(file)
 
     def newBufferedReader: BufferedReader = fs.newBufferedReader(file)
@@ -174,6 +201,12 @@ object FileSystem {
       file.toPath.iterator().asScala.map(_.toString).toList.asJava
 
     override def getName(file: File): String = file.getName
+
+    override def newInputStream(file: File): InputStream =
+      Files.newInputStream(file.toPath)
+
+    override def newOutputStream(file: File): OutputStream =
+      Files.newOutputStream(file.toPath)
 
     override def newBufferedWriter(file: File): BufferedWriter =
       Files.newBufferedWriter(file.toPath)

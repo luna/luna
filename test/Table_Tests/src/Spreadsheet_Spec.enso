@@ -34,6 +34,63 @@ spec_fmt header file read_method =
             t.columns.map .name . should_equal ['Item', 'Price', 'Quantity', 'Price 1']
             t.at 'Price 1' . to_vector . should_equal [20, 40, 0, 60, 0, 10]
 
+Table.Table.should_equal expected =
+    this_cols = this.columns
+    that_cols = expected.columns
+    this_cols.map .name . should_equal (that_cols.map .name)
+    this_cols.map .to_vector . should_equal (that_cols.map .to_vector)
+
 spec =
     here.spec_fmt 'XLSX reading' Examples.xlsx .read_xlsx
+
     here.spec_fmt 'XLS reading' Examples.xls .read_xls
+
+    Test.group 'XLSX writing' <|
+        out = Enso_Project.data / 'out.xlsx'
+        table = Enso_Project.data/'varied_column.csv' . read_csv has_header=False
+        clothes = Enso_Project.data/'clothes.csv' . read_csv
+
+        Test.specify 'should write tables to non-existent XLSX files' <|
+            out.delete_if_exists
+            table.write_xlsx out
+            written = out.read_xlsx
+            written.should_equal table
+            out.delete_if_exists
+
+        Test.specify 'should create a new sheet if it already exists and write mode is Create' <|
+            out.delete_if_exists
+            table.write_xlsx out sheet='Foo'
+            clothes.write_xlsx out sheet='Foo'
+            read_1 = out.read_xlsx sheet='Foo'
+            read_1 . should_equal table
+            read_2 = out.read_xlsx sheet='Foo 1'
+            read_2 . should_equal clothes
+            out.delete_if_exists
+
+        Test.specify 'should overwrite a sheet if it already exists and write mode is Overwrite' <|
+            out.delete_if_exists
+            table.write_xlsx out sheet='Foo'
+            clothes.write_xlsx out sheet='Foo' write_mode=Table.Spreadsheet_Write_Mode.Overwrite
+            read = out.read_xlsx sheet='Foo'
+            read . should_equal clothes
+            out.delete_if_exists
+
+        Test.specify 'should append to a sheet if it already exists and write mode is Append' <|
+            out.delete_if_exists
+            clothes.write_xlsx out sheet='Foo'
+            clothes.write_xlsx out sheet='Foo' write_mode=Table.Spreadsheet_Write_Mode.Append include_header=False
+            read = out.read_xlsx sheet='Foo'
+            read . should_equal (clothes.concat clothes)
+            out.delete_if_exists
+
+        Test.specify 'should write multiple files if row limit is specified' <|
+            out_1 = Enso_Project.data / 'out_1.xlsx'
+            out_2 = Enso_Project.data / 'out_2.xlsx'
+            out_1.delete_if_exists
+            out_2.delete_if_exists
+            clothes.write_xlsx out max_rows_per_file=4
+            out_1.read_xlsx . should_equal (clothes.take_start 4)
+            out_2.read_xlsx . should_equal (clothes.take_end 2)
+            out_1.delete_if_exists
+            out_2.delete_if_exists
+

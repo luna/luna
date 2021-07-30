@@ -6,10 +6,10 @@ import org.apache.commons.io.FileUtils
 import org.enso.editions.SemVerJson._
 import org.enso.projectmanager.{BaseServerSpec, ProjectManagementOps}
 import org.enso.testkit.{FlakySpec, RetrySpec}
-
 import java.io.File
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 import java.util.UUID
+
 import scala.io.Source
 
 class ProjectManagementApiSpec
@@ -129,7 +129,8 @@ class ProjectManagementApiSpec
             "jsonrpc" : "2.0",
             "id" : 1,
             "result" : {
-              "projectId" : $getGeneratedUUID
+              "projectId" : $getGeneratedUUID,
+              "projectName" : "Foo"
             }
           }
           """)
@@ -171,6 +172,60 @@ class ProjectManagementApiSpec
       meta shouldBe Symbol("file")
     }
 
+    "create project from default template" in {
+      val projectName = "Foo"
+
+      implicit val client = new WsTestClient(address)
+
+      createProject(projectName, projectTemplate = Some("default"))
+
+      val projectDir  = new File(userProjectDir, projectName)
+      val packageFile = new File(projectDir, "package.yaml")
+      val mainEnso    = Paths.get(projectDir.toString, "src", "Main.enso").toFile
+      val meta        = Paths.get(projectDir.toString, ".enso", "project.json").toFile
+
+      packageFile shouldBe Symbol("file")
+      mainEnso shouldBe Symbol("file")
+      meta shouldBe Symbol("file")
+    }
+
+    "create project from example template" in {
+      val projectName = "Foo"
+
+      implicit val client = new WsTestClient(address)
+
+      createProject(projectName, projectTemplate = Some("example"))
+
+      val projectDir  = new File(userProjectDir, projectName)
+      val packageFile = new File(projectDir, "package.yaml")
+      val mainEnso    = Paths.get(projectDir.toString, "src", "Main.enso").toFile
+      val helloTxt    = Paths.get(projectDir.toString, "hello.txt").toFile
+      val meta        = Paths.get(projectDir.toString, ".enso", "project.json").toFile
+
+      packageFile shouldBe Symbol("file")
+      mainEnso shouldBe Symbol("file")
+      helloTxt shouldBe Symbol("file")
+      meta shouldBe Symbol("file")
+    }
+
+    "find a name when project is created from template" in {
+      val projectName = "Foo"
+
+      implicit val client = new WsTestClient(address)
+
+      createProject(projectName, projectTemplate = Some("default"))
+      createProject(
+        projectName,
+        projectTemplate = Some("default"),
+        nameSuffix      = Some(1)
+      )
+
+      val projectDir  = new File(userProjectDir, "Foo_1")
+      val packageFile = new File(projectDir, "package.yaml")
+
+      Files.readAllLines(packageFile.toPath) contains "name: Foo_1"
+    }
+
     "create project with specific version" in {
       implicit val client = new WsTestClient(address)
       client.send(json"""
@@ -188,7 +243,8 @@ class ProjectManagementApiSpec
             "jsonrpc" : "2.0",
             "id" : 1,
             "result" : {
-              "projectId" : $getGeneratedUUID
+              "projectId" : $getGeneratedUUID,
+              "projectName" : "Foo"
             }
           }
           """)

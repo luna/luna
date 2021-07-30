@@ -72,6 +72,7 @@ case class Launcher(cliOptions: GlobalCLIOptions) {
     */
   def newProject(
     name: String,
+    projectTemplate: Option[String],
     path: Option[Path],
     versionOverride: Option[SemVer],
     useSystemJVM: Boolean,
@@ -90,6 +91,7 @@ case class Launcher(cliOptions: GlobalCLIOptions) {
             path                = actualPath,
             name                = name,
             engineVersion       = version,
+            projectTemplate     = projectTemplate,
             authorName          = globalConfig.authorName,
             authorEmail         = globalConfig.authorEmail,
             additionalArguments = additionalArguments

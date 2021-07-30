@@ -1,9 +1,29 @@
 # Enso Next
 
+## Libraries
+
+- Added support for writing tables to XLSX spreadsheets
+  ([#1906](https://github.com/enso-org/enso/pull/1906)).
+- Added documentation for the new searcher categories
+  ([#1910](https://github.com/enso-org/enso/pull/1910)).
+
+# Enso 0.2.17 (2021-07-28)
+
 ## Interpreter/Runtime
 
 - Added support for documenting modules directly
   ([#1900](https://github.com/enso-org/enso/pull/1900)).
+
+## Tooling
+
+- Added support for creating projects from a template
+  ([#1902](https://github.com/enso-org/enso/pull/1902)).
+
+## Known Issues
+
+- This is a beta release, so please see the
+  [issue tracker](https://github.com/enso-org/enso/issues?q=is%3Aissue+is%3Aopen+created%3A%3C2021-07-28)
+  for issues opened before the release date.
 
 # Enso 0.2.16 (2021-07-23)
 

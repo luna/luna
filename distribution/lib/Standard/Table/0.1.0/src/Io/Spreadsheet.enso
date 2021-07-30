@@ -5,7 +5,9 @@ import Standard.Base.Data.Time.Date
 
 polyglot java import org.enso.table.format.xlsx.Reader
 
-## Reads the contents of `this` and parses them as an XLSX dataframe.
+## ALIAS Read Excel File
+
+   Reads the contents of `this` and parses them as an XLSX dataframe.
 
    Arguments
    - sheet: specifies which sheet should be read. If left unspecified, reads

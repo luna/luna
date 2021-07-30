@@ -1,5 +1,6 @@
 package org.enso.table.data.column.storage;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.enso.table.data.column.builder.object.Builder;
 import org.enso.table.data.column.builder.object.InferredBuilder;
 import org.enso.table.data.column.operation.aggregate.Aggregator;
@@ -7,6 +8,7 @@ import org.enso.table.data.column.operation.aggregate.CountAggregator;
 import org.enso.table.data.column.operation.aggregate.FunctionAggregator;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -283,4 +285,14 @@ public abstract class Storage {
    * @return a CSV representation of the value at {@code index}.
    */
   protected abstract String getPresentCsvString(int index, Function<Object, String> toCsvString);
+
+  /**
+   * Write the value at the specified index into an XLSX cell.
+   *
+   * @param index the index to read value at. {@link #isNa(long)} must return false for this index.
+   * @param cell the cell to write data to
+   * @param writeCell a callback to delegate writes back to Enso code
+   */
+  public abstract void writeSpreadsheetCell(
+      int index, Cell cell, BiConsumer<Object, Cell> writeCell);
 }

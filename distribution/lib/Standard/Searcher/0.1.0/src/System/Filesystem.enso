@@ -1,0 +1,30 @@
+## The filesystem is where so much of your data actually lives. While Enso
+   provides easy-to-use functionality for working with your files, sometimes you
+   need to do things that are more complex.
+
+   Enso's Filesystem libraries provide a robust set of tools for interacting
+   with the files on your computer. You can read them and write them, yes, but
+   you can also query their attributes and exert detailed control over their
+   structure and contents.
+
+   > Example
+     Create a new file pointing to the `data.csv` file in the project directory.
+
+         import Standard.Base.System.File
+         import Standard.Examples
+
+         example_new = File.new Examples.csv_path
+
+   > Example
+     Get the program's current working directory.
+
+         import Standard.Base.System.File
+
+         example_cwd = File.current_directory
+
+   > Example
+     Get the current user's home directory.
+
+         import Standard.Base.System.File
+
+         example_home = File.home

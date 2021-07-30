@@ -1,0 +1,39 @@
+## Sometimes Enso alone isn't enough for your work. That is why you're provided
+   with a robust suite of tools to use to interact with the system on which it
+   is running.
+
+   From involving external processes in your workflow, to working with the file
+   system directly, to reading information from your computer's environment,
+   Enso's System library has you covered.
+
+   > Example
+     Create a new file pointing to the `data.csv` file in the project directory.
+
+         import Standard.Base.System.File
+         import Standard.Examples
+
+         example_new = File.new Examples.csv_path
+
+   > Example
+     Get the program's current working directory.
+
+         import Standard.Base.System.File
+
+         example_cwd = File.current_directory
+
+   > Example
+     Get the current user's home directory.
+
+         import Standard.Base.System.File
+
+         example_home = File.home
+
+   > Example
+     Call the "echo" command.
+
+         import Standard.Base.System.Platform
+         import Standard.Base.System.Process
+
+         example_run = case Platform.os of
+             Platform.Windows -> Process.run "PowerShell" ["-Command", "exit 42"]
+             _ -> Process.run "bash" ["-c", "exit 42"]

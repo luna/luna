@@ -10,7 +10,9 @@ polyglot java import java.time.format.DateTimeFormatter
 polyglot java import java.time.ZonedDateTime
 polyglot java import org.enso.base.Time_Utils
 
-## Obtains the current date-time from the system clock in the system timezone.
+## ALIAS Current Time
+
+   Obtains the current date-time from the system clock in the system timezone.
 
    > Example
      Get the current time
@@ -57,7 +59,9 @@ new year (month = 1) (day = 1) (hour = 0) (minute = 0) (second = 0) (nanosecond 
         Polyglot_Error err -> Error.throw (Time_Error err.getMessage)
         x -> x
 
-## Obtains an instance of `Time` from a text such as
+## ALIAS Time from Text
+
+   Obtains an instance of `Time` from a text such as
    "2007-12-03T10:15:30+01:00 Europe/Paris".
 
    Arguments:
@@ -285,7 +289,9 @@ type Time
     time_of_day : Time_Of_Day
     time_of_day = Time_Of_Day.time_of_day this.internal_zoned_date_time.toLocalTime
 
-    ## Convert this point in time to date, discarding the time of day
+    ## ALIAS Time to Date
+
+       Convert this point in time to date, discarding the time of day
        information.
 
        > Example
@@ -297,7 +303,9 @@ type Time
     date : Date
     date = Date.date this.internal_zoned_date_time.toLocalDate
 
-    ## Convert the time instant to the same instant in the provided time zone.
+    ## ALIAS Change Time Zone
+
+       Convert the time instant to the same instant in the provided time zone.
 
        Arguments:
        - zone: The time-zone to convert the time instant into.

@@ -68,7 +68,9 @@ new (timeout = 10.seconds) (follow_redirects = True) (proxy = Proxy.System) (ver
 options : (Text | Uri) -> Vector.Vector -> Response ! Request_Error
 options uri (headers = []) = here.new.options uri headers
 
-## Send a Get request.
+## ALIAS GET Request
+
+   Send a Get request.
 
    Arguments:
    - uri: The address to which the request will be sent.
@@ -105,7 +107,9 @@ options uri (headers = []) = here.new.options uri headers
 get : (Text | Uri) -> Vector.Vector -> Response ! Request_Error
 get uri (headers = []) = here.new.get uri headers
 
-## Send the Get request and return the body.
+## ALIAS Fetch Data
+
+   Send the Get request and return the body.
 
    Arguments:
    - uri: The address to which the request will be sent.
@@ -158,7 +162,9 @@ fetch uri (headers = []) =
 head : (Text | Uri) -> Vector.Vector -> Response ! Request_Error
 head uri (headers = []) = here.new.options uri headers
 
-## Send a Post request.
+## ALIAS POST Request
+
+   Send a Post request.
 
    Arguments:
    - uri: The address to which the request will be sent.

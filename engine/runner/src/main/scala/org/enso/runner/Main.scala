@@ -8,13 +8,13 @@ import org.enso.editions.DefaultEdition
 import org.enso.languageserver.boot
 import org.enso.languageserver.boot.LanguageServerConfig
 import org.enso.loggingservice.LogLevel
-import org.enso.pkg.{Contact, PackageManager}
+import org.enso.pkg.{Contact, PackageManager, Template}
 import org.enso.polyglot.{LanguageInfo, Module, PolyglotContext}
 import org.enso.version.VersionDescription
 import org.graalvm.polyglot.PolyglotException
-
 import java.io.File
 import java.util.UUID
+
 import scala.Console.err
 import scala.jdk.CollectionConverters._
 import scala.util.Try
@@ -26,6 +26,7 @@ object Main {
   private val HELP_OPTION                 = "help"
   private val NEW_OPTION                  = "new"
   private val PROJECT_NAME_OPTION         = "new-project-name"
+  private val PROJECT_TEMPLATE_OPTION     = "new-project-template"
   private val PROJECT_AUTHOR_NAME_OPTION  = "new-project-author-name"
   private val PROJECT_AUTHOR_EMAIL_OPTION = "new-project-author-email"
   private val REPL_OPTION                 = "repl"
@@ -85,6 +86,15 @@ object Main {
       .longOpt(PROJECT_NAME_OPTION)
       .desc(
         s"Specifies a project name when creating a project using --$NEW_OPTION."
+      )
+      .build
+    val newProjectTemplateOpt = CliOption.builder
+      .hasArg(true)
+      .numberOfArgs(1)
+      .argName("name")
+      .longOpt(PROJECT_TEMPLATE_OPTION)
+      .desc(
+        s"Specifies a project template when creating a project using --$NEW_OPTION."
       )
       .build
     val newProjectAuthorNameOpt = CliOption.builder
@@ -202,6 +212,7 @@ object Main {
       .addOption(docs)
       .addOption(newOpt)
       .addOption(newProjectNameOpt)
+      .addOption(newProjectTemplateOpt)
       .addOption(newProjectAuthorNameOpt)
       .addOption(newProjectAuthorEmailOpt)
       .addOption(lsOption)
@@ -248,12 +259,14 @@ object Main {
     *
     * @param path root path of the newly created project
     * @param nameOption specifies the name of the created project
+    * @param templateOption specifies the template of the created project
     * @param authorName if set, sets the name of the author and maintainer
     * @param authorEmail if set, sets the email of the author and maintainer
     */
   private def createNew(
     path: String,
     nameOption: Option[String],
+    templateOption: Option[String],
     authorName: Option[String],
     authorEmail: Option[String]
   ): Unit = {
@@ -270,12 +283,22 @@ object Main {
         s"Creating a new project $name based on edition [$baseEdition]."
       )
     }
+
+    val template = templateOption
+      .map { name =>
+        Template.fromString(name).getOrElse {
+          logger.error(s"Unknown project template name: '$name'.")
+          exitFail()
+        }
+      }
+
     PackageManager.Default.create(
       root        = root,
       name        = name,
       edition     = Some(edition),
       authors     = authors,
-      maintainers = authors
+      maintainers = authors,
+      template    = template.getOrElse(Template.Default)
     )
     exitSuccess()
   }
@@ -629,10 +652,11 @@ object Main {
 
     if (line.hasOption(NEW_OPTION)) {
       createNew(
-        path        = line.getOptionValue(NEW_OPTION),
-        nameOption  = Option(line.getOptionValue(PROJECT_NAME_OPTION)),
-        authorName  = Option(line.getOptionValue(PROJECT_AUTHOR_NAME_OPTION)),
-        authorEmail = Option(line.getOptionValue(PROJECT_AUTHOR_EMAIL_OPTION))
+        path           = line.getOptionValue(NEW_OPTION),
+        nameOption     = Option(line.getOptionValue(PROJECT_NAME_OPTION)),
+        authorName     = Option(line.getOptionValue(PROJECT_AUTHOR_NAME_OPTION)),
+        authorEmail    = Option(line.getOptionValue(PROJECT_AUTHOR_EMAIL_OPTION)),
+        templateOption = Option(line.getOptionValue(PROJECT_TEMPLATE_OPTION))
       )
     }
 

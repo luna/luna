@@ -1,0 +1,11 @@
+## It is not uncommon for systems to pass configuration data and information in
+   their environment variables. Enso provides you with the tools to read that
+   environment, and better integrate into your workflow.
+
+   > Example
+     Look up the value of the `PATH` environment variable.
+
+         import Standard.Base.System.Environment
+
+         example_get = Environment.get "PATH"
+

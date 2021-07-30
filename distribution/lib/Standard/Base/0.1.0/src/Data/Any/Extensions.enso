@@ -1,6 +1,8 @@
 from Standard.Base import all
 
-## Checks if `this` is equal to `that.`
+## ALIAS Equality
+
+   Checks if `this` is equal to `that`.
 
    Arguments:
    - that: The object to compare `this` with.
@@ -51,7 +53,9 @@ Any.== that = if Meta.is_same_object this that then True else
            Therefore, there are no more cases to handle in this method.
         _ -> False
 
-## Checks if `this` is not equal to `that`.
+## ALIAS Inequality
+
+   Checks if `this` is not equal to `that`.
 
    Arguments:
    - that: The object to compare `this` against.
@@ -72,7 +76,9 @@ Any.== that = if Meta.is_same_object this that then True else
 Any.!= : Any -> Boolean
 Any.!= that = (this == that).not
 
-## Checks if `this` is greater than `that`.
+## ALIAS Greater Than
+
+   Checks if `this` is greater than `that`.
 
    Arguments:
    - that: The value to compare `this` against.
@@ -95,7 +101,9 @@ Any.!= that = (this == that).not
 Any.> : Any -> Boolean
 Any.> that = this.compare_to that == Ordering.Greater
 
-## Checks if `this` is greater than or equal to `that`.
+## ALIAS Greater Than or Equal
+
+   Checks if `this` is greater than or equal to `that`.
 
    Arguments:
    - that: The value to compare `this` against.
@@ -119,7 +127,9 @@ Any.> that = this.compare_to that == Ordering.Greater
 Any.>= : Any -> Boolean
 Any.>= that = (this > that) || (this == that)
 
-## Checks if `this` is less than `that`.
+## ALIAS Less Than
+
+   Checks if `this` is less than `that`.
 
    Arguments:
    - that: The value to compare `this` against.
@@ -142,7 +152,9 @@ Any.>= that = (this > that) || (this == that)
 Any.< : Any -> Boolean
 Any.< that = this.compare_to that == Ordering.Less
 
-## Checks if `this` is less than or equal to `that`.
+## ALIAS Less Than or Equal
+
+   Checks if `this` is less than or equal to `that`.
 
    Arguments:
    - that: The value to compare `this` against.

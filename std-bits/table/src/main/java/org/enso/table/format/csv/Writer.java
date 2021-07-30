@@ -1,6 +1,7 @@
 package org.enso.table.format.csv;
 
 import org.enso.table.data.table.Table;
+import org.enso.table.format.util.FileSplitter;
 
 import java.io.*;
 import java.util.Arrays;
@@ -85,21 +86,9 @@ public class Writer {
             toCsvString);
       }
     } else {
-      var nfiles = table.rowCount() / maxRecords + (table.rowCount() % maxRecords == 0 ? 0 : 1);
-      var originalName = file.getName();
-      var extIndex = originalName.indexOf('.');
-      var dir = file.getParentFile();
-      String basename;
-      String extension;
-      if (extIndex == -1) {
-        basename = originalName;
-        extension = "";
-      } else {
-        basename = originalName.substring(0, extIndex);
-        extension = originalName.substring(extIndex);
-      }
-      for (int i = 0; i < nfiles; i++) {
-        var currentFile = new File(dir, basename + "_" + (i + 1) + extension);
+      var files = new FileSplitter(table.rowCount(), maxRecords, file);
+      for (int i = 0; i < files.getNumberOfFiles(); i++) {
+        var currentFile = files.getFile(i);
         try (var writer = new PrintWriter(new FileWriter(currentFile))) {
           writeAppendable(
               table,

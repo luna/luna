@@ -14,7 +14,9 @@ polyglot java import java.time.ZoneOffset
 system : Zone
 system = Zone ZoneId.systemDefault
 
-## The system's local timezone.
+## ALIAS Current Time Zone
+
+   The system's local timezone.
 
    > Example
      Get the system's local timezone.
@@ -25,7 +27,9 @@ system = Zone ZoneId.systemDefault
 local : Zone
 local = here.system
 
-## The UTC timezone.
+## ALIAS UTC Time Zone
+
+   The UTC timezone.
 
    > Example
      Get the UTC timezone.
@@ -56,7 +60,9 @@ new : Integer -> Integer -> Integer -> Zone
 new (hours = 0) (minutes = 0) (seconds = 0) =
     Zone (ZoneOffset.ofHoursMinutesSeconds hours minutes seconds . normalized)
 
-## This method parses the ID producing a `Zone`.
+## ALIAS Time Zone from Text
+
+   This method parses the ID producing a `Zone`.
 
    Arguments:
    - text: The text representing a zone identifier.

@@ -3,9 +3,7 @@ package org.enso.interpreter.runtime.util;
 import com.oracle.truffle.api.TruffleFile;
 import org.enso.filesystem.FileSystem;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -51,6 +49,16 @@ public class TruffleFileSystem implements FileSystem<TruffleFile> {
   @Override
   public String getName(TruffleFile file) {
     return file.getName();
+  }
+
+  @Override
+  public InputStream newInputStream(TruffleFile file) throws IOException {
+    return file.newInputStream();
+  }
+
+  @Override
+  public OutputStream newOutputStream(TruffleFile file) throws IOException {
+    return file.newOutputStream();
   }
 
   @Override

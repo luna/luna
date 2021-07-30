@@ -1,0 +1,34 @@
+## Along with numbers and text, dates and times are probably the most common
+   type of data encountered whilst doing data analysis.
+
+   Enso provides a robust and capable suite of date and time operations,
+   allowing you to work with your data with ease.
+
+   > Example
+     Get the current time
+
+         import Standard.Base.Data.Time
+
+         example_now = Time.now
+
+   > Example
+     Parse UTC time.
+
+         import Standard.Base.Data.Time
+
+         example_parse = Time.parse "2020-10-01T04:11:12Z"
+
+   > Example
+     Convert time instance to -04:00 timezone.
+
+         import Standard.Base.Data.Time
+         import Standard.Base.Data.Time.Zone
+
+         exaomple_at_zone = Time.new 2020 . at_zone (Zone.new -4)
+
+   > Example
+     Convert the current time to a date.
+
+         import Standard.Base.Data.Time
+
+         example_date = Time.now.date

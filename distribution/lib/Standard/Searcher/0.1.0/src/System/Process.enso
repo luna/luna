@@ -1,0 +1,17 @@
+## As powerful a data analysis tool that Enso is, it doesn't yet account for
+   every eventuality. To that end, it provides you with the tools to integrate
+   it into your workflow, rather than forcing you to do everything inside it.
+
+   Enso's process library provides you with a robust and easy-to-use mechanism
+   for utilising other programs in your Enso workflow, providing them with their
+   parameters and getting results back from them.
+
+   > Example
+     Call the "echo" command.
+
+         import Standard.Base.System.Platform
+         import Standard.Base.System.Process
+
+         example_run = case Platform.os of
+             Platform.Windows -> Process.run "PowerShell" ["-Command", "exit 42"]
+             _ -> Process.run "bash" ["-c", "exit 42"]

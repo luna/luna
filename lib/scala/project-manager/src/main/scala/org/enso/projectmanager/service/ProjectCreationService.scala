@@ -14,7 +14,6 @@ import org.enso.projectmanager.service.versionmanagement.RuntimeVersionManagerFa
 import org.enso.projectmanager.versionmanagement.DistributionConfiguration
 import org.enso.runtimeversionmanager.config.GlobalConfigurationManager
 import org.enso.runtimeversionmanager.runner.Runner
-
 import java.nio.file.Path
 
 /** A service for creating new project structures using the runner of the
@@ -35,6 +34,7 @@ class ProjectCreationService[
     path: Path,
     name: String,
     engineVersion: SemVer,
+    projectTemplate: Option[String],
     missingComponentAction: MissingComponentAction
   ): F[ProjectServiceFailure, Unit] = Sync[F]
     .blockingOp {
@@ -57,7 +57,17 @@ class ProjectCreationService[
         )
 
       val settings =
-        runner.newProject(path, name, engineVersion, None, None, Seq()).get
+        runner
+          .newProject(
+            path,
+            name,
+            engineVersion,
+            projectTemplate,
+            None,
+            None,
+            Seq()
+          )
+          .get
       val jvmSettings = distributionConfiguration.defaultJVMSettings
       runner.withCommand(settings, jvmSettings) { command =>
         logger.trace(

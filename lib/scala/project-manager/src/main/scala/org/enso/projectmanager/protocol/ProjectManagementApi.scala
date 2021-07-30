@@ -1,6 +1,7 @@
 package org.enso.projectmanager.protocol
 
 import java.util.UUID
+
 import io.circe.Json
 import io.circe.syntax._
 import nl.gn0s1s.bump.SemVer
@@ -24,10 +25,11 @@ object ProjectManagementApi {
     case class Params(
       name: String,
       version: Option[EnsoVersion],
+      projectTemplate: Option[String],
       missingComponentAction: Option[MissingComponentAction]
     )
 
-    case class Result(projectId: UUID)
+    case class Result(projectId: UUID, projectName: String)
 
     implicit val hasParams = new HasParams[this.type] {
       type Params = ProjectCreate.Params

@@ -4,7 +4,9 @@ polyglot java import java.lang.Double
 polyglot java import java.lang.Math
 polyglot java import java.lang.String
 
-## Computes the inverse of the sine function
+## ALIAS Inverse Sine
+
+   Computes the inverse of the sine function
 
    Selects a value in the -pi/2 through pi/2 range.
 
@@ -15,7 +17,9 @@ polyglot java import java.lang.String
 Number.asin : Decimal
 Number.asin = Math.asin this.to_decimal
 
-## Computes the inverse of the cosine function.
+## ALIAS Inverse Cosine
+
+   Computes the inverse of the cosine function.
 
    Selects a value in the -pi/2 through pi/2 range.
 
@@ -26,7 +30,9 @@ Number.asin = Math.asin this.to_decimal
 Number.acos : Decimal
 Number.acos = Math.acos this.to_decimal
 
-## Computes the inverse of the tangent function.
+## ALIAS Inverse Tangent
+
+   Computes the inverse of the tangent function.
 
    Selects a value in the -pi/2 through pi/2 range.
 
@@ -52,7 +58,9 @@ Number.atan = Math.atan this.to_decimal
 Number.atan_2 : Number -> Decimal
 Number.atan_2 y = Math.atan2 this.to_decimal y.to_decimal
 
-## Computes the sine function.
+## ALIAS Sine
+
+   Computes the sine function.
 
    > Example
      Calculate the sine of 2.
@@ -61,7 +69,9 @@ Number.atan_2 y = Math.atan2 this.to_decimal y.to_decimal
 Number.sin : Decimal
 Number.sin = Math.sin this.to_decimal
 
-## Computes the cosine function.
+## ALIAS Cosine
+
+   Computes the cosine function.
 
    > Example
      Calculate the cosine of 2.
@@ -70,7 +80,9 @@ Number.sin = Math.sin this.to_decimal
 Number.cos : Decimal
 Number.cos = Math.cos this.to_decimal
 
-## Computes the tangent function.
+## ALIAS Tangent
+
+   Computes the tangent function.
 
    > Example
      Calculate the tangent of 2.
@@ -106,7 +118,9 @@ Number.cosh = Math.cosh this.to_decimal
 Number.tanh : Decimal
 Number.tanh = Math.tanh this.to_decimal
 
-## Computes the exponential function, raising Euler's number `r` to the power of
+## ALIAS Exponential
+
+   Computes the exponential function, raising Euler's number `r` to the power of
    `this`.
 
    > Example
@@ -116,7 +130,9 @@ Number.tanh = Math.tanh this.to_decimal
 Number.exp : Decimal
 Number.exp = Math.exp this.to_decimal
 
-## Computes the natural logarithm function.
+## ALIAS Natural Logarithm
+
+   Computes the natural logarithm function.
 
    > Example
      Calculate the natural logarithm of 2.
@@ -125,7 +141,9 @@ Number.exp = Math.exp this.to_decimal
 Number.ln : Decimal
 Number.ln = Math.log this.to_decimal
 
-## Computes the square root of `this`.
+## ALIAS Square Root
+
+   Computes the square root of `this`.
 
    > Example
      Calculate the square root of 8.
@@ -134,7 +152,9 @@ Number.ln = Math.log this.to_decimal
 Number.sqrt : Decimal
 Number.sqrt = Math.sqrt this.to_decimal
 
-## Computes the `base`-log of `this`.
+## ALIAS Logarithm
+
+   Computes the `base`-log of `this`.
 
    Arguments:
    - base: The base for the logarithm.
@@ -161,7 +181,9 @@ Number.log base = this.ln / base.ln
 Number.format : Text -> Text
 Number.format fmt = String.format fmt this
 
-## Creates a new right-exclusive range of integers from `this` to `n`.
+## ALIAS Range
+
+   Creates a new right-exclusive range of integers from `this` to `n`.
 
    Arguments:
    - n: The end of the range.
@@ -230,7 +252,9 @@ Number.max that = if this > that then this else that
 Number.to_json : Json.Number
 Number.to_json = Json.Number this
 
-## Parses a textual representation of a decimal into a decimal number, returning
+## ALIAS From Text
+
+   Parses a textual representation of a decimal into a decimal number, returning
    a `Parse_Error` if the text does not represent a valid decimal.
 
    Arguments:

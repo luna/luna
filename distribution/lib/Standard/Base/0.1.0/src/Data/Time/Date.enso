@@ -21,7 +21,9 @@ polyglot java import org.enso.base.Time_Utils
 now : Date
 now = Date LocalDate.now
 
-## Alias for `now`.
+## ALIAS Current Date
+
+   Obtains the current date from the system clock in the system timezone.
 
    > Example
      Get the current date.
@@ -61,7 +63,9 @@ new year (month = 1) (day = 1) =
         Polyglot_Error err -> Error.throw (Time.Time_Error err.getMessage)
         x -> x
 
-## Converts text containing a date into a Date object.
+## ALIAS Date from Text
+
+   Converts text containing a date into a Date object.
 
    Arguments:
    - text: The text to try and parse as a date.
@@ -180,7 +184,9 @@ type Date
     day : Integer
     day = this . internal_local_date . getDayOfMonth
 
-    ## Combine this date with time of day to create a point in time.
+    ## ALIAS Date to Time
+
+       Combine this date with time of day to create a point in time.
 
        Arguments:
        - time_of_day: The time to combine with the date to create a time.

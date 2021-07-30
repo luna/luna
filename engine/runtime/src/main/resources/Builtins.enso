@@ -975,8 +975,93 @@ type Ref
 
    If a Number is expected, then the program can provide either a Decimal or
    an Integer in its place.
-@Builtin_Type
 type Number
+
+    ## The root type of the Enso numeric hierarchy.
+
+       If a Number is expected, then the program can provide either a Decimal or
+       an Integer in its place.
+    @Builtin_Type
+    type Number
+
+    ## ALIAS Add
+
+       Adds two arbitrary numbers.
+
+       Arguments:
+       - that: The number to add to this.
+
+       Addition in Enso will undergo automatic conversions such that you need
+       not convert between Integer and Decimal manually.
+
+       > Example
+         Adding 10 and 15.
+
+             10 + 15
+    + : Number -> Number
+    + that = @Builtin_Method "Integer.+"
+
+    ## ALIAS Subtract
+
+       Subtract an arbitrary number from this.
+
+       Arguments:
+       - that: The number to subtract from this.
+
+       > Example
+         Subtract 5 from 2.
+
+             2 - 5
+    - : Number -> Number
+    - that = @Builtin_Method "Integer.-"
+
+    ## ALIAS Multiply
+
+       Multiply two arbitrary numbers.
+
+       Arguments:
+       - that: The number to multiply this by.
+
+       Multiplication in Enso will undergo automatic conversions such that you
+       need not convert between Integer and Decimal manually.
+
+       > Example
+         Multiplying 3 by 5.
+
+             3 * 5
+    * : Number -> Number
+    * that = @Builtin_Method "Integer.*"
+
+    ## ALIAS Divide
+
+       Divides an this by an arbitrary number.
+
+       Arguments:
+       - that: The number to divide this by.
+
+       Division in Enso will undergo automatic conversions such that you need
+       not convert between Integer and Decimal manually.
+
+       > Example
+         Dividing 10 by 4 to get 2.5.
+
+             10 / 4
+    / : Number -> Number
+    / that = @Builtin_Method "Integer./"
+
+    ## ALIAS Power
+
+       Compute the result of raising this to the power that.
+
+       Arguments:
+       - that: The exponent.
+
+       > Example
+         Computing 2 cubed.
+
+             2^3
+    ^ : Number -> Number
+    ^ that = @Builtin_Method "Integer.^"
 
 ## Integral numbers.
 type Integer

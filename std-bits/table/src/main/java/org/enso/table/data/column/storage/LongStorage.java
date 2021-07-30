@@ -1,9 +1,11 @@
 package org.enso.table.data.column.storage;
 
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.LongStream;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.enso.table.data.column.builder.object.NumericBuilder;
 import org.enso.table.data.column.operation.aggregate.Aggregator;
 import org.enso.table.data.column.operation.aggregate.numeric.LongToLongAggregator;
@@ -384,5 +386,10 @@ public class LongStorage extends NumericStorage {
   @Override
   protected String getPresentCsvString(int index, Function<Object, String> toCsvString) {
     return String.valueOf(getItem(index));
+  }
+
+  @Override
+  public void writeSpreadsheetCell(int index, Cell cell, BiConsumer<Object, Cell> writeCell) {
+    cell.setCellValue(getItem(index));
   }
 }

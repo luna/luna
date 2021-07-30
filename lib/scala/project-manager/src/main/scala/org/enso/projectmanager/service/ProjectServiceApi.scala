@@ -9,6 +9,7 @@ import org.enso.projectmanager.data.{
   ProjectMetadata,
   RunningLanguageServerInfo
 }
+import org.enso.projectmanager.model.Project
 
 /** A contract for the Project Service.
   *
@@ -19,17 +20,19 @@ trait ProjectServiceApi[F[+_, +_]] {
   /** Creates a user project.
     *
     * @param progressTracker the actor to send progress updates to
-    * @param name the name of th project
+    * @param name the name of the project
     * @param engineVersion Enso version to use for the new project
+    * @param projectTemplate the name of the project template
     * @param missingComponentAction specifies how to handle missing components
-    * @return projectId
+    * @return project
     */
   def createUserProject(
     progressTracker: ActorRef,
     name: String,
     engineVersion: SemVer,
+    projectTemplate: Option[String],
     missingComponentAction: MissingComponentAction
-  ): F[ProjectServiceFailure, UUID]
+  ): F[ProjectServiceFailure, Project]
 
   /** Deletes a user project.
     *

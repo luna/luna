@@ -4,9 +4,9 @@ import cats.Show
 import org.enso.editions.{Editions, LibraryName}
 import org.enso.filesystem.FileSystem
 import org.enso.pkg.validation.NameValidation
+import java.io.{File, InputStream, OutputStream}
+import java.net.URI
 
-import java.io.File
-import scala.io.Source
 import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Try, Using}
 
@@ -48,13 +48,14 @@ case class Package[F](
   /** Stores the package metadata on the hard drive. If the package does not exist,
     * creates the required directory structure.
     */
-  def save(): Try[Unit] = for {
-    _ <- Try {
-      if (!root.exists) createDirectories()
-      if (!sourceDir.exists) createSourceDir()
-    }
-    _ <- saveConfig()
-  } yield ()
+  def save(): Try[Unit] =
+    for {
+      _ <- Try {
+        if (!root.exists) createDirectories()
+        if (!sourceDir.exists) createSourceDir()
+      }
+      _ <- saveConfig()
+    } yield ()
 
   /** Creates the package directory structure.
     */
@@ -82,19 +83,14 @@ case class Package[F](
     */
   def updateConfig(update: Config => Config): Package[F] = {
     val newPkg = copy(config = update(config))
-    newPkg.save()
+    newPkg.saveConfig()
     newPkg
   }
 
-  /** Creates the sources directory and populates it with a dummy Main file.
+  /** Creates the sources directory.
     */
   def createSourceDir(): Unit = {
     Try(sourceDir.createDirectories()).getOrElse(throw CouldNotCreateDirectory)
-    val mainCodeSrc = Source.fromResource(Package.mainFileName)
-    val writer      = sourceDir.getChild(Package.mainFileName).newBufferedWriter
-    writer.write(mainCodeSrc.mkString)
-    writer.close()
-    mainCodeSrc.close()
   }
 
   /** Saves the config metadata into the package configuration file.
@@ -185,10 +181,12 @@ class PackageManager[F](implicit val fileSystem: FileSystem[F]) {
     */
   def create(
     root: F,
-    config: Config
+    config: Config,
+    template: Template
   ): Package[F] = {
     val pkg = Package(root, config, fileSystem)
     pkg.save()
+    copyResources(pkg, template)
     pkg
   }
 
@@ -197,6 +195,7 @@ class PackageManager[F](implicit val fileSystem: FileSystem[F]) {
     * @param root  the root location of the package.
     * @param name the name for the new package.
     * @param version version of the newly-created package.
+    * @param template the template for the new package.
     * @param edition the edition to use for the project; if not specified, it
     *                will not specify any, meaning that the current default one
     *                will be used
@@ -207,6 +206,7 @@ class PackageManager[F](implicit val fileSystem: FileSystem[F]) {
     name: String,
     namespace: String                    = "local",
     version: String                      = "0.0.1",
+    template: Template                   = Template.Default,
     edition: Option[Editions.RawEdition] = None,
     authors: List[Contact]               = List(),
     maintainers: List[Contact]           = List(),
@@ -222,7 +222,7 @@ class PackageManager[F](implicit val fileSystem: FileSystem[F]) {
       preferLocalLibraries = true,
       maintainers          = maintainers
     )
-    create(root, config)
+    create(root, config, template)
   }
 
   /** Tries to parse package structure from a given root location.
@@ -302,6 +302,51 @@ class PackageManager[F](implicit val fileSystem: FileSystem[F]) {
     val dirname = file.getName
     NameValidation.normalizeName(dirname)
   }
+
+  /** Copy the template resources to the package.
+    *
+    * @param template the template to copy the resources from
+    * @param pkg the package to copy the resources to
+    */
+  private def copyResources(pkg: Package[F], template: Template): Unit =
+    template match {
+      case Template.Default =>
+        val mainEnsoPath = new URI(s"/default/src/${Package.mainFileName}")
+
+        copyResource(
+          mainEnsoPath,
+          pkg.sourceDir.getChild(Package.mainFileName)
+        )
+
+      case Template.Example =>
+        val helloTxtPath = new URI("/example/hello.txt")
+        val mainEnsoPath = new URI(s"/example/src/${Package.mainFileName}")
+
+        copyResource(
+          helloTxtPath,
+          pkg.root.getChild("hello.txt")
+        )
+        copyResource(
+          mainEnsoPath,
+          pkg.sourceDir.getChild(Package.mainFileName)
+        )
+    }
+
+  /** Copy the resource to provided resource.
+    *
+    * @param from the source
+    * @param to the destination
+    */
+  private def copyResource(from: URI, to: F): Unit = {
+    val fromStream = getClass.getResourceAsStream(from.toString)
+    val toStream   = to.newOutputStream
+    try PackageManager.copyStream(fromStream, toStream)
+    finally {
+      fromStream.close()
+      toStream.close()
+    }
+  }
+
 }
 
 object PackageManager {
@@ -326,6 +371,16 @@ object PackageManager {
   /** The error indicating that the project name is invalid. */
   case class InvalidNameException(message: String)
       extends RuntimeException(message)
+
+  private def copyStream(in: InputStream, out: OutputStream): Unit = {
+    val buffer = Array.ofDim[Byte](4096)
+    var length = in.read(buffer)
+    while (length != -1) {
+      out.write(buffer, 0, length)
+      length = in.read(buffer)
+    }
+  }
+
 }
 
 /** A companion object for static methods on the [[Package]] class.

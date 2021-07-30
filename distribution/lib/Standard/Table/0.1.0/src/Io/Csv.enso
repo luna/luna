@@ -4,7 +4,9 @@ import Standard.Table
 polyglot java import org.enso.table.format.csv.Parser
 polyglot java import java.io.ByteArrayInputStream
 
-## Reads the contents of `this` and parses them as a CSV dataframe.
+## ALIAS Read CSV
+
+   Reads the contents of `this` and parses them as a CSV dataframe.
 
    Arguments
    - has_header: Specifies whether the first line of the file should be

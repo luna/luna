@@ -18,6 +18,7 @@ trait ProjectCreationServiceApi[F[+_, +_]] {
     * @param path path at which to create the project
     * @param name name of the project
     * @param engineVersion version of the engine this project is meant for
+    * @param projectTemplate the name of the project template
     * @param missingComponentAction specifies how to handle missing components
     */
   def createProject(
@@ -25,6 +26,7 @@ trait ProjectCreationServiceApi[F[+_, +_]] {
     path: Path,
     name: String,
     engineVersion: SemVer,
+    projectTemplate: Option[String],
     missingComponentAction: MissingComponentAction
   ): F[ProjectServiceFailure, Unit]
 }

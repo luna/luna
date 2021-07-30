@@ -57,11 +57,19 @@ object LauncherApplication {
         "PATH specifies where to create the project. If it is not specified, " +
         "a directory called PROJECT-NAME is created in the current directory."
       )
+      def projectTemplate = {
+        Opts.optionalParameter[String](
+          "new-project-template",
+          "TEMPLATE-NAME",
+          "Specifies a project template when creating a project."
+        )
+      }
       val additionalArgs = Opts.additionalArguments()
 
       (
         nameOpt,
         pathOpt,
+        projectTemplate,
         versionOverride,
         systemJVMOverride,
         jvmOpts,
@@ -70,6 +78,7 @@ object LauncherApplication {
         (
           name,
           path,
+          template,
           versionOverride,
           systemJVMOverride,
           jvmOpts,
@@ -78,6 +87,7 @@ object LauncherApplication {
           Launcher(config).newProject(
             name                = name,
             path                = path,
+            projectTemplate     = template,
             versionOverride     = versionOverride,
             useSystemJVM        = systemJVMOverride,
             jvmOpts             = jvmOpts,

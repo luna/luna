@@ -15,7 +15,9 @@ polyglot java import com.ibm.icu.lang.UCharacter
 polyglot java import com.ibm.icu.text.BreakIterator
 polyglot java import org.enso.base.Text_Utils
 
-## Computes the number of characters in the text.
+## ALIAS Length
+
+   Computes the number of characters in the text.
 
    ! What is a Character?
      A character is defined as an Extended Grapheme Cluster, see Unicode
@@ -67,7 +69,9 @@ Text.each function =
     iterate fst nxt
     Nothing
 
-## Returns a vector containing all characters in the given text.
+## ALIAS Get Characters
+
+   Returns a vector containing all characters in the given text.
 
    ! What is a Character?
      A character is defined as an Extended Grapheme Cluster, see Unicode
@@ -84,7 +88,9 @@ Text.characters =
     this.each bldr.append
     bldr.to_vector
 
-## Takes a separator string and returns a vector resulting from splitting
+## ALIAS Split
+
+   Takes a separator string and returns a vector resulting from splitting
    `this` on each occurence of `separator`.
 
    Arguments:
@@ -96,7 +102,7 @@ Text.characters =
          "ham,eggs,cheese,tomatoes".split ","
 
    > Example
-     Split the string on whitespace into a vector of items.
+     Split the text on whitespace into a vector of items.
 
          "ham eggs cheese tomatoes".split Split_Kind.Whitespace
 Text.split : Split_Kind -> Vector.Vector Text
@@ -108,7 +114,9 @@ Text.split (separator = Split_Kind.Whitespace) =
         Text -> Text_Utils.split_by_literal this separator
     Vector.from_array result
 
-## Returns a vector containing all words in the given text.
+## ALIAS Get Words
+
+   Returns a vector containing all words in the given text.
 
    Arguments:
    - keep_whitespace: Whether or not the whitespace around the words should be
@@ -205,7 +213,9 @@ Text.compare_to : Text -> Ordering
 Text.compare_to that = if this == that then Ordering.Equal else
     if Text_Utils.lt this that then Ordering.Less else Ordering.Greater
 
-## Check if `this` is empty.
+## ALIAS Check Emptiness
+
+   Check if `this` is empty.
 
    ! What is Empty?
      Text is considered to be empty when its length is zero.
@@ -217,7 +227,9 @@ Text.compare_to that = if this == that then Ordering.Equal else
 Text.is_empty : Boolean
 Text.is_empty = this == ""
 
-## Check if `this` is not empty.
+## ALIAS Check Non-Emptiness
+
+   Check if `this` is not empty.
 
    ! What is Not Empty?
      Text is considered to be not empty when its length is greater than zero.
@@ -282,7 +294,9 @@ Text.codepoints = Vector.from_array (Text_Utils.get_codepoints this)
 Text.from_codepoints : Vector.Vector Integer -> Text
 Text.from_codepoints codepoints = Text_Utils.from_codepoints codepoints.to_array
 
-## Checks whether `this` starts with `prefix`.
+## ALIAS Check Prefix
+
+   Checks whether `this` starts with `prefix`.
 
    Arguments:
    - prefix: The prefix to see if `this` starts with.
@@ -300,7 +314,9 @@ Text.from_codepoints codepoints = Text_Utils.from_codepoints codepoints.to_array
 Text.starts_with : Text -> Boolean
 Text.starts_with prefix = Text_Utils.starts_with this prefix
 
-## Checks whether `this` ends with `suffix`.
+## ALIAS Check Suffix
+
+   Checks whether `this` ends with `suffix`.
 
    Arguments:
    - suffix: The suffix to see if `this` ends with.
@@ -317,7 +333,9 @@ Text.starts_with prefix = Text_Utils.starts_with this prefix
 Text.ends_with : Text -> Boolean
 Text.ends_with suffix = Text_Utils.ends_with this suffix
 
-## Checks whether `this` contains `sequence` as its substring.
+## ALIAS Contains
+
+   Checks whether `this` contains `sequence` as its substring.
 
    Arguments:
    - sequence: The text to see if it is contained in `this`.
@@ -335,7 +353,9 @@ Text.ends_with suffix = Text_Utils.ends_with this suffix
 Text.contains : Text -> Boolean
 Text.contains sequence = Text_Utils.contains this sequence
 
-## Replaces each occurrences of `old_sequence` within `this` with `new_sequence`.
+## ALIAS Replace Text
+
+   Replaces each occurrences of `old_sequence` within `this` with `new_sequence`.
 
    Arguments:
    - old_sequence: The text to search for in `this`.
@@ -469,7 +489,9 @@ Text.take_last count =
     boundary = iterator.next -count
     if boundary == -1 then this else Text_Utils.drop_first this boundary
 
-## Converts each character in `this` to lower case.
+## ALIAS Lower Case
+
+   Converts each character in `this` to lower case.
 
    Arguments:
    - locale: specifies the locale for charater case mapping. Defaults to the
@@ -496,7 +518,9 @@ Text.to_lower_case : Locale.Locale -> Text
 Text.to_lower_case locale=Locale.default =
     UCharacter.toLowerCase locale.java_locale this
 
-## Converts each character in `this` to upper case.
+## ALIAS Upper Case
+
+   Converts each character in `this` to upper case.
 
    Arguments:
    - locale: specifies the locale for charater case mapping. Defaults to
@@ -510,7 +534,7 @@ Text.to_lower_case locale=Locale.default =
    > Example
      Converting a text to upper case in the default locale:
 
-         "My TeXt!".to_lower_case == "my text!"
+         "My TeXt!".to_upper_case == "MY TEXT!"
 
    > Example
      Converting a text to upper case in a specified locale:

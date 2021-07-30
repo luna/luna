@@ -1,0 +1,41 @@
+## Data never exists in isolation. Seeing how your data compares to previous
+   data sets, market trends or competitors is a key operation for data science.
+
+   Enso provides a robust set of tools for comparing your data with itself or
+   with other data sets.
+
+   > Example
+     Checking if the variable `a` is equal to `147`.
+
+         from Standard.Base import all
+
+         example_equality =
+             a = 7 * 21
+             a == 147
+
+   > Example
+     Checking if the variable `a` is not equal to `147`.
+
+         from Standard.Base import all
+
+         example_inequality =
+             a = 7 * 21
+             a != 147
+
+   > Example
+     Checking if the variable `a` is greater than `147`.
+
+         from Standard.Base import all
+
+         example_greater =
+             a = 7 * 28
+             a > 147
+
+   > Example
+     Checking if the variable `a` is less than `147`.
+
+         from Standard.Base import all
+
+         example_less =
+             a = 7 * 21
+             a < 147

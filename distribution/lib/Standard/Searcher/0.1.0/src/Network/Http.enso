@@ -1,0 +1,47 @@
+## HTTP is the heart of Enso's networking toolkit, with a huge variety of data
+   available over simple endpoints. 
+
+   It provides the tools for you to fetch data from remote services, query API
+   endpoints and so much more. It is flexible and highly configurable, but also
+   provides simple and easy to use defaults.
+
+   > Example
+     Download a file. NOTE: This example will make a network request.
+
+         import Standard.Base.Network.Http
+         import Standard.Examples
+
+         example_fetch =
+             out_file = Examples.scratch_file
+             res = Http.fetch "http://httpbin.org/bytes/1024" . to_file out_file
+
+   > Example
+     Send authenticated Get request (note the use of TLS). NOTE: This example
+     will make a network request.
+
+         import Standard.Base.Network.Http
+         import Standard.Base.Network.Http.Header
+
+         example_get =
+            headers = [Header.authorization_basic "user" "pass"]
+            Http.get "https://httpbin.org/basic-auth/user/pass" headers
+
+   > Example
+     Send a Post request with binary data. NOTE: This example will make a
+     network request.
+
+         import Standard.Base.Network.Http
+         import Standard.Base.Network.Http.Header
+         import Standard.Base.Network.Http.Request.Body
+
+         example_post =
+             body = Body.Bytes "Hello".utf_8
+             header_binary = Header.content_type "application/octet-stream"
+             Http.post "http://httpbin.org/post" body [header_binary]
+
+   > Example
+     Parse Uri text.
+
+         import Standard.Base.Network.Uri
+
+         example_parse = Uri.parse "http://example.com"

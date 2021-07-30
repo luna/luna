@@ -4,12 +4,15 @@ import Standard.Base.System.Platform
 import Standard.Table.Data.Column
 import Standard.Table.Io.Csv
 import Standard.Visualization
+import Standard.Base.Data.Time.Date
+import Standard.Table.Io.Spreadsheet_Write_Mode
 
 from Standard.Table.Data.Order_Rule as Order_Rule_Module import Order_Rule
 
 polyglot java import org.enso.table.data.table.Table as Java_Table
 polyglot java import org.enso.table.operations.OrderBuilder
 polyglot java import org.enso.table.format.csv.Writer as Csv_Writer
+polyglot java import org.enso.table.format.xlsx.Writer as Spreadsheet_Writer
 
 ## Creates a new table from a vector of `[name, items]` pairs.
 
@@ -56,7 +59,9 @@ from_rows header rows =
     columns = header.map_with_index i-> name-> [name, rows.map (_.at i)]
     here.new columns
 
-## Joins a vector of tables (or columns) into a single table, using each table's
+## ALIAS Join Tables
+
+   Joins a vector of tables (or columns) into a single table, using each table's
    index as the join key.
 
    Arguments:
@@ -196,7 +201,10 @@ type Table
         Nothing -> Error.throw (No_Such_Column_Error name)
         c -> Column.Column c
 
-    ## Selects only the rows of this table that correspond to `True` values in
+    ## ALIAS Filter Rows
+       ALIAS Mask Columns
+
+       Selects only the rows of this table that correspond to `True` values in
        `indexes`.
 
        Arguments:
@@ -219,7 +227,9 @@ type Table
     where indexes =
         Table (this.java_table.mask indexes.java_column)
 
-    ## Sets the column value at the given name.
+    ## ALIAS Add Column
+
+       Sets the column value at the given name.
 
        Arguments:
        - name: The name of the column to set the value of.
@@ -286,7 +296,9 @@ type Table
         Nothing -> Error.throw No_Index_Set_Error
         i -> Column.Column i
 
-    ## Selects a subset of columns from this table by name.
+    ## Alias Select Columns
+
+       Selects a subset of columns from this table by name.
 
        > Example
          Get the item name and price columns from the shop inventory.
@@ -298,7 +310,9 @@ type Table
     select : Vector -> Table
     select columns = Table (this.java_table.selectColumns columns.to_array)
 
-    ## Efficiently joins two tables based on either the index or the specified
+    ## ALIAS Join Table
+
+       Efficiently joins two tables based on either the index or the specified
        key column.
 
        Arguments:
@@ -332,8 +346,18 @@ type Table
             Table t ->
                 Table (this.java_table.join t drop_unmatched on left_suffix right_suffix)
 
-    ## Returns a new Table without rows that contained missing values in any of
+    ## ALIAS Clean Rows
+
+       Returns a new Table without rows that contained missing values in any of
        the columns.
+
+       > Example
+         Remove any rows that contain missing values from the table.
+
+             import Standard.Examples
+
+             example_drop_missing_rows =
+                 Examples.inventory_table.drop_missing_rows
     drop_missing_rows : Table
     drop_missing_rows =
         cols = this.columns
@@ -344,7 +368,9 @@ type Table
                 this.where non_missing_mask
             False -> this
 
-    ## Returns a new Table without columns that contained any missing values.
+    ## ALIAS Clean Columns
+
+       Returns a new Table without columns that contained any missing values.
 
        > Example
          Remove any columns that contain missing values from the table.
@@ -397,7 +423,9 @@ type Table
         cols = this.columns
         here.new [["Column", cols.map .name], ["Items Count", cols.map .count], ["Storage Type", cols.map .storage_type]] . set_index "Column"
 
-    ## Returns an aggregate table resulting from grouping the elements by the
+    ## ALIAS Group a Table
+
+       Returns an aggregate table resulting from grouping the elements by the
        value of the specified column.
 
        Arguments:
@@ -422,7 +450,8 @@ type Table
     group by=Nothing =
         Aggregate_Table (this.java_table.group by)
 
-    ## UNSTABLE
+    ## ALIAS Sort Table
+       UNSTABLE
 
        Sorts the table according to the specified rules.
 
@@ -465,7 +494,7 @@ type Table
 
              example_sort =
                 table = Examples.inventory_table
-                table.sort by="price" order=Sort_Order.Descending missing_last = false
+                table.sort by="price" order=Sort_Order.Descending missing_last=false
 
        > Example
          Sort the shop inventory based on the total stock, using the number sold
@@ -592,7 +621,8 @@ type Table
     concat other =
         Table (this.java_table.concat other.java_table)
 
-    ## UNSTABLE
+    ## ALIAS First N Rows
+       UNSTABLE
 
        Returns a table containing the first `count` elements in this table.
 
@@ -611,7 +641,8 @@ type Table
     take_start : Integer -> Table
     take_start count = Table (this.java_table.slice 0 count)
 
-    ## UNSTABLE
+    ## ALIAS Last N Rows
+       UNSTABLE
 
        Returns a table containing the last `count` elements in this table.
 
@@ -632,7 +663,8 @@ type Table
         start_point = Math.max (this.row_count - count) 0
         Table (this.java_table.slice start_point count)
 
-    ## UNSTABLE
+    ## ALIAS First Row
+       UNSTABLE
 
        Returns the first row in the table, if it exists.
 
@@ -666,7 +698,8 @@ type Table
     head : Table ! Empty_Error
     head = this.first
 
-    ## UNSTABLE
+    ## ALIAS Last Row
+       UNSTABLE
 
        Returns the last row in the table, if it exists.
 
@@ -723,7 +756,8 @@ type Table
     to_csv include_header=True always_quote=False separator=',' line_ending=Line_Ending_Style.Unix =
         Csv_Writer.writeString this.java_table include_header always_quote line_ending.to_text separator .to_csv_field
 
-    ## UNSTABLE
+    ## ALIAS Write CSV
+       UNSTABLE
 
        Serializes this table into CSV and writes it to the specified file.
 
@@ -759,6 +793,50 @@ type Table
     write_csv file include_header=True always_quote=False separator=',' line_ending=Line_Ending_Style.Unix max_rows_per_file=Nothing =
         Csv_Writer.writePath this.java_table file.absolute.path max_rows_per_file include_header always_quote line_ending.to_text separator .to_csv_field
 
+    ## ALIAS Write Excel File
+       UNSTABLE
+
+       Writes this table into an XLSX spreadsheet.
+
+       Arguments:
+       - file: the XLSX file to write data to. If it exists, the behavior is
+         specified by the `write_mode` argument. Note that other files may be
+         created or written to if `max_rows_per_file` is used.
+       - sheet: the name of the sheet to use for writing the data.
+       - write_mode: specifies this method's behavior if the specified file and
+         sheet already exist. Can be one of:
+         - Spreadsheet_Write_Mode.Create: this is the default value. This
+           setting will create a new sheet in the file, with a name chosen such
+           that the clash is avoided.
+         - Spreadsheet_Write_Mode.Overwrite: will result in removing all
+           contents of the existing sheet and replacing it with the new data.
+         - Spreadsheet_Write_Mode.Append: will append this data to the existing
+           sheet, such that the new data starts after the last row containing
+           any data.
+       - include_header: Specifies whether the first line of generated CSV
+         should contain the column names.
+       - max_rows_per_file: specifies the maximum number of rows that can be
+         written to a single file. If this option is set and its value is less
+         than the number of rows in this table, the behavior of the `file`
+         argument changes. Instead of writing the contents directly to `file`,
+         its name is parsed and a numbered series of files with names based
+         on `file` is written to instead. For example, if `file` points to
+         `~/my_data/output.xlsx`, `this` contains 250 rows, and
+         `max_rows_per_file` is set to `100`, 3 different files will be written:
+         - `~/my_data/output_1.xlsx`, containing rows 0 through 99;
+         - `~/my_data/output_2.xlsx`, containing rows 100 through 199;
+         - `~/my_data/output_3.xlsx`, containing rows 200 through 249.
+
+       > Example
+         Write a table to an XLSX file.
+
+             import Standard.Examples
+
+             example_to_xlsx = Examples.inventory_table.write_xlsx (Enso_Project.data / example_xlsx_output.xlsx)
+    write_xlsx : File.File -> String -> Spreadsheet_Write_Mode.Speadsheet_Write_Mode -> Boolean -> Nothing | Integer -> Nothing
+    write_xlsx file sheet='Data' write_mode=Spreadsheet_Write_Mode.Create include_header=True max_rows_per_file=Nothing =
+        Spreadsheet_Writer.writeXlsx this.java_table file.absolute.path sheet write_mode.to_java include_header max_rows_per_file .write_to_spreadsheet
+
 ## UNSTABLE
 
    Used for converting arbitrary values into fields in CSV files.
@@ -769,6 +847,37 @@ Any.to_csv_field = this.to_text
 
    Used for converting text values into fields in CSV files.
 Text.to_csv_field = this
+
+## UNSTABLE
+   ADVANCED
+
+   Used to write a value into a spreadsheet cell.
+
+   Arguments:
+   - cell: an instance of `org.apache.poi.ss.usermodel.Cell`, the value of
+     which should be set by this method.
+Any.write_to_spreadsheet cell = cell.setCellValue this.to_text
+
+## UNSTABLE
+   ADVANCED
+
+   Used to write a value into a spreadsheet cell.
+
+   Arguments:
+   - cell: an instance of `org.apache.poi.ss.usermodel.Cell`, the value of
+     which should be set by this method.
+Text.write_to_spreadsheet cell = cell.setCellValue this
+
+## UNSTABLE
+   ADVANCED
+
+   Used to write a value into a spreadsheet cell.
+
+   Arguments:
+   - cell: an instance of `org.apache.poi.ss.usermodel.Cell`, the value of
+     which should be set by this method.
+Date.Date.write_to_spreadsheet cell = cell.setCellValue this.internal_local_date
+
 
 
 ## Represents a table with grouped rows.
@@ -817,7 +926,9 @@ type Aggregate_Table
     count : Column
     count = Column.Column this.java_table.count
 
-    ## Returns an aggregate column with the given name, contained in this table.
+    ## ALIAS Get a Column
+
+       Returns an aggregate column with the given name, contained in this table.
 
        Arguments:
        - name: The name of the aggregate column to get.
@@ -950,4 +1061,3 @@ print_table header rows indices_count format_term =
    - y: The right operand to the comparator.
 comparator_to_java : (Any -> Any -> Ordering) -> Any -> Any -> Integer
 comparator_to_java cmp x y = cmp x y . to_sign
-

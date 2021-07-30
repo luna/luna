@@ -27,20 +27,22 @@ abstract class ProjectOpenSpecBase
 
     val blackhole = system.actorOf(blackholeProps)
     val ordinaryAction = projectService.createUserProject(
-      blackhole,
-      "Proj_1",
-      defaultVersion,
-      MissingComponentAction.Fail
+      progressTracker        = blackhole,
+      projectName            = "Proj_1",
+      projectTemplate        = None,
+      engineVersion          = defaultVersion,
+      missingComponentAction = MissingComponentAction.Fail
     )
-    ordinaryProject = Runtime.default.unsafeRun(ordinaryAction)
+    ordinaryProject = Runtime.default.unsafeRun(ordinaryAction).id
     val brokenName = "Projbroken"
     val brokenAction = projectService.createUserProject(
-      blackhole,
-      brokenName,
-      defaultVersion,
-      MissingComponentAction.Fail
+      progressTracker        = blackhole,
+      projectName            = brokenName,
+      projectTemplate        = None,
+      engineVersion          = defaultVersion,
+      missingComponentAction = MissingComponentAction.Fail
     )
-    brokenProject = Runtime.default.unsafeRun(brokenAction)
+    brokenProject = Runtime.default.unsafeRun(brokenAction).id
 
     // TODO [RW] this hack should not be necessary with #1273
     val projectDir = new File(userProjectDir, brokenName)

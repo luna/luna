@@ -9,7 +9,9 @@ polyglot java import java.io.IOException
 polyglot java import java.nio.file.AccessDeniedException
 polyglot java import java.nio.file.NoSuchFileException
 
-## Creates a new file object, pointing to the given path.
+## ALIAS New File
+
+   Creates a new file object, pointing to the given path.
 
    Arguments:
    - path: The path to the file that you want to create, or a file itself. The
@@ -27,7 +29,9 @@ new path = case path of
     Text -> File (Prim_Io.get_file path)
     _ -> path
 
-## Open and read the file at the provided `path`.
+## ALIAS Read Text File
+
+   Open and read the file at the provided `path`.
 
    Arguments:
    - path: The path of the file to open and read the contents of. It will
@@ -51,7 +55,9 @@ read path = .read <| case path of
     Text -> (here.new path)
     File _ -> path
 
-## Returns the current working directory (CWD) of the current program.
+## ALIAS Current Directory
+
+   Returns the current working directory (CWD) of the current program.
 
    > Example
      Get the program's current working directory.
@@ -62,7 +68,9 @@ read path = .read <| case path of
 current_directory : File
 current_directory = File (Prim_Io.get_cwd)
 
-## Returns the home directory of the current user.
+## ALIAS Home Directory
+
+   Returns the home directory of the current user.
 
    > Example
      Get the current user's home directory.
@@ -210,7 +218,9 @@ type File
         this.with_output_stream opts (_.write_bytes contents)
         Nothing
 
-    ## Writes a UTF-8 encoded `Text` into this file, replacing any existing
+    ## ALIAS Write Text File
+
+       Writes a UTF-8 encoded `Text` into this file, replacing any existing
        contents.
 
        Arguments:

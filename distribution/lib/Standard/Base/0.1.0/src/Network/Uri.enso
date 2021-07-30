@@ -5,7 +5,9 @@ import Standard.Base.Network.Uri.Internal
 polyglot java import java.net.URI as Java_URI
 polyglot java import java.util.Optional
 
-## Parse a Uri from text.
+## ALIAS Get URI
+
+   Parse a Uri from text.
 
    Arguments:
    - text: The text to parse as a URI.

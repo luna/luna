@@ -17,12 +17,18 @@ trait ProjectManagementOps { this: BaseServerSpec =>
 
   def createProject(
     name: String,
+    nameSuffix: Option[Int]                                = None,
+    projectTemplate: Option[String]                        = None,
     missingComponentAction: Option[MissingComponentAction] = None
   )(implicit client: WsTestClient): UUID = {
     val fields = Seq("name" -> name.asJson) ++
       missingComponentAction
         .map(a => "missingComponentAction" -> a.asJson)
+        .toSeq ++
+      projectTemplate
+        .map(t => "projectTemplate" -> t.asJson)
         .toSeq
+
     val params  = Json.obj(fields: _*)
     val request = json"""
             { "jsonrpc": "2.0",
@@ -32,13 +38,15 @@ trait ProjectManagementOps { this: BaseServerSpec =>
             }
           """
     client.send(request)
-    val projectId = getGeneratedUUID
+    val projectId   = getGeneratedUUID
+    val projectName = nameSuffix.fold(name)(n => s"${name}_$n")
     client.expectJson(json"""
           {
             "jsonrpc":"2.0",
             "id":0,
             "result": {
-              "projectId": $projectId
+              "projectId": $projectId,
+              "projectName": $projectName
             }
           }
           """)

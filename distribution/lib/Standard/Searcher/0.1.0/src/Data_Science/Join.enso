@@ -1,0 +1,26 @@
+## It is common to have multiple sources of data that you want to combine to get
+   your insights from. Joining is this process.
+
+   This section contains Enso's utilities for joining data, be it two sources or
+   multiple.
+
+   > Example
+     Join multiple tables together. It joins tables on their indices, so we need
+     to make sure the indices are correct.
+
+         import Standard.Examples
+         import Standard.Table
+
+         example_join =
+             table_1 = Examples.inventory_table
+             table_2 = Examples.popularity_table
+             Table.join [table_1, table_2]
+
+   > Example
+     Join the popularity table and the inventory table to see the relative
+     popularities of the items in the shop inventory.
+
+         import Standard.Examples
+
+         example_join =
+             Examples.inventory_table.join Examples.popularity_table

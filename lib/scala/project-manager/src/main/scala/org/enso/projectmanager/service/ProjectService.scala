@@ -47,7 +47,6 @@ import org.enso.projectmanager.service.config.GlobalConfigServiceApi
 import org.enso.projectmanager.service.versionmanagement.RuntimeVersionManagerErrorRecoverySyntax._
 import org.enso.projectmanager.service.versionmanagement.RuntimeVersionManagerFactory
 import org.enso.projectmanager.versionmanagement.DistributionConfiguration
-
 import java.util.UUID
 
 /** Implementation of business logic for project management.
@@ -82,12 +81,19 @@ class ProjectService[
   /** @inheritdoc */
   override def createUserProject(
     progressTracker: ActorRef,
-    name: String,
+    projectName: String,
     engineVersion: SemVer,
+    projectTemplate: Option[String],
     missingComponentAction: MissingComponentAction
-  ): F[ProjectServiceFailure, UUID] = for {
-    projectId    <- gen.randomUUID()
-    _            <- log.debug("Creating project [{}, {}].", name, projectId)
+  ): F[ProjectServiceFailure, Project] = for {
+    projectId <- gen.randomUUID()
+    _ <- log.debug(
+      "Creating project [{}, {}, {}].",
+      projectName,
+      projectId,
+      projectTemplate
+    )
+    name         <- getNameForNewProject(projectName, projectTemplate)
     _            <- validateName(name)
     _            <- checkIfNameExists(name)
     creationTime <- clock.nowInUtc()
@@ -111,6 +117,7 @@ class ProjectService[
       path,
       name,
       engineVersion,
+      projectTemplate,
       missingComponentAction
     )
     _ <- log.debug(
@@ -124,7 +131,7 @@ class ProjectService[
       .mapError(toServiceFailure)
     _ <- log.debug("Project [{}] updated in repository [{}].", projectId, repo)
     _ <- log.info("Project created [{}].", project)
-  } yield projectId
+  } yield project
 
   /** @inheritdoc */
   override def deleteUserProject(
@@ -480,5 +487,36 @@ class ProjectService[
           s"Could not resolve project engine version: ${error.getMessage}"
         )
       }
+
+  private def getNameForNewProject(
+    projectName: String,
+    projectTemplate: Option[String]
+  ): F[ProjectServiceFailure, String] = {
+    def mkName(name: String, suffix: Int): String =
+      s"${name}_${suffix}"
+    def findAvailableName(
+      projectName: String,
+      suffix: Int
+    ): F[ProjectRepositoryFailure, String] = {
+      val newName = mkName(projectName, suffix)
+      CovariantFlatMap[F].ifM(repo.exists(newName))(
+        ifTrue  = findAvailableName(projectName, suffix + 1),
+        ifFalse = CovariantFlatMap[F].pure(newName)
+      )
+    }
+
+    projectTemplate match {
+      case Some(_) =>
+        CovariantFlatMap[F]
+          .ifM(repo.exists(projectName))(
+            ifTrue  = findAvailableName(projectName, 1),
+            ifFalse = CovariantFlatMap[F].pure(projectName)
+          )
+          .mapError(toServiceFailure)
+      case None =>
+        CovariantFlatMap[F].pure(projectName)
+    }
+
+  }
 
 }

@@ -124,6 +124,7 @@ class LauncherRunnerSpec extends RuntimeVersionManagerTest {
           path                = projectPath,
           name                = "ProjectName",
           engineVersion       = defaultEngineVersion,
+          projectTemplate     = None,
           authorName          = Some(authorName),
           authorEmail         = Some(authorEmail),
           additionalArguments = Seq(additionalArgument)
@@ -151,6 +152,7 @@ class LauncherRunnerSpec extends RuntimeVersionManagerTest {
             path                = projectPath,
             name                = "ProjectName2",
             engineVersion       = nightlyVersion,
+            projectTemplate     = None,
             authorName          = None,
             authorEmail         = None,
             additionalArguments = Seq()

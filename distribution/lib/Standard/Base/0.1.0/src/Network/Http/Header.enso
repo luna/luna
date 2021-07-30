@@ -2,7 +2,9 @@ from Standard.Base import all
 
 polyglot java import org.enso.base.Http_Utils
 
-## Create a new Header.
+## ALIAS Build a Header
+
+   Create a new Header.
 
    Arguments:
    - name: The name of the header.
@@ -44,9 +46,9 @@ accept value = Header "Accept" value
 accept_all : Header
 accept_all = here.accept "*/*"
 
-# Authorization
+## ALIAS Build an Auth Header
 
-## Create "Authorization" header.
+   Create an "Authorization" header.
 
    Arguments:
    - value: The value for the authorization header.
