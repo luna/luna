@@ -21,22 +21,16 @@
              Table.join [item_names, num_transactions, num_sold]
 
    > Example
-     Compute the maximum value of a column.
+     Compute the maximum value of a column, the minimum value, the sum of its
+     values, and its mean, and return these in a vector.
 
          import Standard.Examples
 
-         example_max = Examples.integer_column.max
+         example_aggregate =
+             column = Examples.integer_column
+             max = column.max
+             min = column.min
+             sum = column.sum
+             mean = column.mean
+             [max, min, sum, mean]
 
-   > Example
-     Sum the values in a column.
-
-         import Standard.Examples
-
-         example_sum = Examples.integer_column.sum
-
-   > Example
-     Compute the mean value of a column.
-
-         import Standard.Examples
-
-         example_mean = Examples.integer_column.mean

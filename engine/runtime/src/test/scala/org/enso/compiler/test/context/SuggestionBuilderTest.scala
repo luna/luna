@@ -518,6 +518,59 @@ class SuggestionBuilderTest extends CompilerTest {
       )
     }
 
+    "build method with union type signature" in {
+      implicit val moduleContext: ModuleContext = freshModuleContext
+
+      val code =
+        """type MyAtom
+          |
+          |MyAtom.apply : (Number | Text | MyAtom) -> Number
+          |MyAtom.apply f = f this
+          |""".stripMargin
+      val module = code.preprocessModule
+
+      build(code, module) shouldEqual Tree.Root(
+        Vector(
+          ModuleNode,
+          Tree.Node(
+            Suggestion.Atom(
+              externalId        = None,
+              module            = "Unnamed.Test",
+              name              = "MyAtom",
+              arguments         = Seq(),
+              returnType        = "Unnamed.Test.MyAtom",
+              documentation     = None,
+              documentationHtml = None
+            ),
+            Vector()
+          ),
+          Tree.Node(
+            Suggestion.Method(
+              externalId = None,
+              module     = "Unnamed.Test",
+              name       = "apply",
+              arguments = Seq(
+                Suggestion
+                  .Argument("this", "Unnamed.Test.MyAtom", false, false, None),
+                Suggestion.Argument(
+                  "f",
+                  "Number | Text | Unnamed.Test.MyAtom",
+                  false,
+                  false,
+                  None
+                )
+              ),
+              selfType          = "Unnamed.Test.MyAtom",
+              returnType        = "Number",
+              documentation     = None,
+              documentationHtml = None
+            ),
+            Vector()
+          )
+        )
+      )
+    }
+
     "build method with lazy arguments" in {
       implicit val moduleContext: ModuleContext = freshModuleContext
 

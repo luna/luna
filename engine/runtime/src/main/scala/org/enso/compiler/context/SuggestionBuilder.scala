@@ -335,9 +335,12 @@ final class SuggestionBuilder[A: IndexedSource](val source: A) {
   ): Vector[TypeArg] = {
     def go(typeExpr: IR.Expression, args: Vector[TypeArg]): Vector[TypeArg] =
       typeExpr match {
-        case IR.Application.Operator.Binary(left, _, right, _, _, _) =>
-          val arg = TypeArg.Function(go(left.value, Vector()))
-          go(right.value, args :+ arg)
+        case IR.Application.Operator.Binary(left, op, right, _, _, _) =>
+          val arg = for {
+            leftArg  <- go(left.value, Vector()).headOption
+            rightArg <- go(right.value, Vector()).headOption
+          } yield TypeArg.Binary(leftArg, rightArg, op.name)
+          args :++ arg
         case IR.Function.Lambda(List(targ), body, _, _, _, _) =>
           val typeName = targ.name.name
           val qualifiedTypeName = resolveTypeName(bindings, typeName)
@@ -357,7 +360,13 @@ final class SuggestionBuilder[A: IndexedSource](val source: A) {
           args
       }
 
-    go(typeExpr, Vector())
+    typeExpr match {
+      case IR.Application.Operator.Binary(left, _, right, _, _, _) =>
+        val arg = TypeArg.Function(go(left.value, Vector()))
+        go(right.value, Vector(arg))
+      case expr =>
+        go(expr, Vector())
+    }
   }
 
   /** Resolve unqualified type name.
@@ -494,6 +503,10 @@ final class SuggestionBuilder[A: IndexedSource](val source: A) {
           val typeList = types.map(go(_, level + 1))
           if (level > 0) typeList.mkString("(", " -> ", ")")
           else typeList.mkString(" -> ")
+        case TypeArg.Binary(l, r, op) =>
+          val left  = go(l, level + 1)
+          val right = go(r, level + 1)
+          s"$left $op $right"
         case TypeArg.Application(fun, args) =>
           val funText  = go(fun, level)
           val argsList = args.map(go(_, level + 1)).mkString(" ")
@@ -597,6 +610,15 @@ object SuggestionBuilder {
       * @param signature the list of types defining the function
       */
     case class Function(signature: Vector[TypeArg]) extends TypeArg
+
+    /** Binary operator, like `A | B`
+      *
+      * @param left the left hand side of a binary operator
+      * @param right the right hand side of a binary operator
+      * @param operator the binary operator
+      */
+    case class Binary(left: TypeArg, right: TypeArg, operator: String)
+        extends TypeArg
 
     /** Function application, like `Either A B`.
       *

@@ -45,6 +45,7 @@ public class Parser {
     CsvParserSettings settings = new CsvParserSettings();
     settings.setHeaderExtractionEnabled(hasHeader);
     settings.detectFormatAutomatically();
+    settings.setMaxCharsPerColumn(-1);
     CsvParser parser = new CsvParser(settings);
     parser.beginParsing(inputStream);
     StorageBuilder[] builders = null;

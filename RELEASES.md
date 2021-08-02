@@ -6,6 +6,8 @@
   ([#1906](https://github.com/enso-org/enso/pull/1906)).
 - Added documentation for the new searcher categories
   ([#1910](https://github.com/enso-org/enso/pull/1910)).
+- Fixed a bug where CSV files with very long lines could not be parsed
+  ([#1914](https://github.com/enso-org/enso/pull/1914)).
 
 # Enso 0.2.17 (2021-07-28)
 

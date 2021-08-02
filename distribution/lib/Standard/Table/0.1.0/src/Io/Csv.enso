@@ -64,14 +64,19 @@ from_csv : File.File | Text -> Boolean -> Text -> Table ! Parse_Error
 from_csv csv has_header=True prefix='C' =
     parser_inst = Parser.create has_header prefix
 
+    handle_error error = case error of
+        Polyglot_Error err -> Error.throw (Parse_Error err.getMessage)
+        _ -> Panic.throw error
+
     case csv of
         Text ->
             input_stream = ByteArrayInputStream.new csv.utf_8.to_array
-            Table.Table (parser_inst.parse input_stream)
+            Panic.recover Table.Table (parser_inst.parse input_stream) . catch handle_error
         File.File _ ->
-            csv.with_input_stream [File.Option.Read] stream->
+            maybe_err = Panic.recover <| csv.with_input_stream [File.Option.Read] stream->
                 stream.with_java_stream java_stream->
                     Table.Table (parser_inst.parse java_stream)
+            maybe_err.catch handle_error
         _ ->
             found_type_name = Meta.get_qualified_type_name csv
             file_name = Meta.get_qualified_type_name File.File
