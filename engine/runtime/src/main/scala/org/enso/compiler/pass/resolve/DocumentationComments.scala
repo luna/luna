@@ -162,7 +162,24 @@ case object DocumentationComments extends IRPass {
     * @return `ir`, with any doc comments associated with nodes as metadata
     */
   private def resolveModule(ir: IR.Module): IR.Module = {
-    val newBindings = (ir.bindings.headOption match {
+    // All entities that came from source (the only ones we care about).
+    val allModuleEntities: List[IR] =
+      (ir.imports ++ ir.exports ++ ir.bindings)
+        .filter(_.location.isDefined)
+        .sortWith { (l, r) =>
+          val leftLocation = l.location.getOrElse(
+            throw new IllegalStateException(
+              "Location has been checked to be present."
+            )
+          )
+          val rightLocation = r.location.getOrElse(
+            throw new IllegalStateException(
+              "Location has been checked to be present."
+            )
+          )
+          leftLocation.start < rightLocation.start
+        }
+    val newBindings = (allModuleEntities.headOption match {
       case Some(doc: IR.Comment.Documentation) =>
         ir.updateMetadata(this -->> Doc(doc.doc))
         resolveList(ir.bindings.drop(1))

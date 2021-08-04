@@ -21,10 +21,17 @@ object Template {
     override val name = "default"
   }
 
-  /** The example project template. */
-  case object Example extends Template {
-    override val name = "example"
+  case object Orders extends Template {
+    override val name = "orders"
   }
 
-  val allTemplates = Seq(Default, Example)
+  case object Restaurants extends Template {
+    override val name = "restaurants"
+  }
+
+  case object Stargazers extends Template {
+    override val name = "stargazers"
+  }
+
+  val allTemplates = Seq(Default, Orders, Restaurants, Stargazers)
 }

@@ -95,10 +95,10 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
 
     "be associated with atoms and methods" in {
       ir.bindings.length shouldEqual 2
-      ir.bindings(0) shouldBe an[IR.Module.Scope.Definition.Atom]
+      ir.bindings.head shouldBe an[IR.Module.Scope.Definition.Atom]
       ir.bindings(1) shouldBe an[IR.Module.Scope.Definition.Method]
 
-      getDoc(ir.bindings(0)) shouldEqual " This is doc for My_Atom"
+      getDoc(ir.bindings.head) shouldEqual " This is doc for My_Atom"
       getDoc(ir.bindings(1)) shouldEqual " This is doc for my_method"
     }
 
@@ -109,7 +109,74 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
     "not be associated with modules when not the first entity" in {
       implicit val moduleContext: ModuleContext = mkModuleContext
       val ir =
-        """from Standard.Base import al
+        """from Standard.Base import all
+          |
+          |## My module documentation
+          |
+          |## This is doc for My_Atom
+          |type My_Atom a b c
+          |
+          |## This is doc for my_method
+          |MyAtom.my_method x = x + this
+          |""".stripMargin.preprocessModule.resolve
+
+      ir.getMetadata(DocumentationComments) should not be defined
+    }
+
+    "be associated with modules when ambiguous" in {
+      implicit val moduleContext: ModuleContext = mkModuleContext
+      val ir =
+        """## My module documentation
+          |type My_Atom a b c
+          |
+          |## This is doc for my_method
+          |MyAtom.my_method x = x + this
+          |""".stripMargin.preprocessModule.resolve
+
+      getDoc(ir) shouldEqual " My module documentation"
+
+      val atom = ir.bindings.head
+      atom.getMetadata(DocumentationComments) should not be defined
+    }
+
+    "treat imports as breakers" in {
+      implicit val moduleContext: ModuleContext = mkModuleContext
+      val ir =
+        """import Foo.Bar.Baz
+          |
+          |## My module documentation
+          |
+          |## This is doc for My_Atom
+          |type My_Atom a b c
+          |
+          |## This is doc for my_method
+          |MyAtom.my_method x = x + this
+          |""".stripMargin.preprocessModule.resolve
+
+      ir.getMetadata(DocumentationComments) should not be defined
+    }
+
+    "treat polyglot imports as breakers" in {
+      implicit val moduleContext: ModuleContext = mkModuleContext
+      val ir =
+        """polyglot java import java.util.Random
+          |
+          |## My module documentation
+          |
+          |## This is doc for My_Atom
+          |type My_Atom a b c
+          |
+          |## This is doc for my_method
+          |MyAtom.my_method x = x + this
+          |""".stripMargin.preprocessModule.resolve
+
+      ir.getMetadata(DocumentationComments) should not be defined
+    }
+
+    "treat exports as breakers" in {
+      implicit val moduleContext: ModuleContext = mkModuleContext
+      val ir =
+        """export My_Atom
           |
           |## My module documentation
           |
@@ -143,7 +210,7 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
         .asInstanceOf[IR.Expression.Block]
 
       body.expressions.length shouldEqual 1
-      getDoc(body.expressions(0)) shouldEqual " Do thing"
+      getDoc(body.expressions.head) shouldEqual " Do thing"
       getDoc(body.returnValue) shouldEqual " Do another thing"
     }
 
@@ -158,13 +225,13 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
           |    z = x * y
           |""".stripMargin.preprocessModule.resolve
       val body = ir
-        .bindings(0)
+        .bindings.head
         .asInstanceOf[IR.Module.Scope.Definition.Method.Binding]
         .body
         .asInstanceOf[IR.Expression.Block]
 
       body.expressions.length shouldEqual 1
-      getDoc(body.expressions(0)) shouldEqual " Do thing"
+      getDoc(body.expressions.head) shouldEqual " Do thing"
       getDoc(body.returnValue) shouldEqual " Do another thing"
     }
 
@@ -181,14 +248,14 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
           |    f 1
           |""".stripMargin.preprocessModule.resolve
       val body = ir
-        .bindings(0)
+        .bindings.head
         .asInstanceOf[IR.Module.Scope.Definition.Method.Binding]
         .body
         .asInstanceOf[IR.Expression.Block]
 
       body.expressions.length shouldEqual 2
-      body.expressions(0) shouldBe an[IR.Application.Operator.Binary]
-      getDoc(body.expressions(0)) shouldEqual " Id"
+      body.expressions.head shouldBe an[IR.Application.Operator.Binary]
+      getDoc(body.expressions.head) shouldEqual " Id"
       getDoc(body.returnValue) shouldEqual " Return thing"
     }
   }
@@ -214,16 +281,16 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
           |        ## the return
           |        0
           |""".stripMargin.preprocessModule.resolve
-      val tp = ir.bindings(0).asInstanceOf[IR.Module.Scope.Definition.Type]
+      val tp = ir.bindings.head.asInstanceOf[IR.Module.Scope.Definition.Type]
       getDoc(tp) shouldEqual " the type Foo"
-      val t1 = tp.body(0)
+      val t1 = tp.body.head
       getDoc(t1) shouldEqual " the constructor Bar"
       val t2 = tp.body(1)
       getDoc(t2) shouldEqual " the included Unit"
       val method = tp.body(2).asInstanceOf[IR.Function.Binding]
       getDoc(method) shouldEqual " a method"
       val block = method.body.asInstanceOf[IR.Expression.Block]
-      getDoc(block.expressions(0)) shouldEqual " a statement"
+      getDoc(block.expressions.head) shouldEqual " a statement"
       getDoc(block.returnValue) shouldEqual " the return"
     }
   }
@@ -275,14 +342,14 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
           |        _ -> 50
           |""".stripMargin.preprocessModule
 
-      val t1 = ir.bindings(0)
+      val t1 = ir.bindings.head
       getDoc(t1) shouldEqual " the constructor Bar"
       inside(ir.bindings(1)) {
         case method: IR.Module.Scope.Definition.Method.Explicit =>
           getDoc(method) shouldEqual " a method"
           inside(method.body) { case lambda: IR.Function.Lambda =>
             inside(lambda.body) { case block: IR.Expression.Block =>
-              getDoc(block.expressions(0)) shouldEqual " a statement"
+              getDoc(block.expressions.head) shouldEqual " a statement"
               getDoc(block.returnValue) shouldEqual " the return"
             }
           }
@@ -294,7 +361,7 @@ class DocumentationCommentsTest extends CompilerTest with Inside {
             inside(lambda.body) { case block: IR.Expression.Block =>
               inside(block.returnValue) { case caseExpr: IR.Case.Expr =>
                 caseExpr.branches should have length 2
-                getDoc(caseExpr.branches(0)) shouldEqual " case 1"
+                getDoc(caseExpr.branches.head) shouldEqual " case 1"
                 getDoc(caseExpr.branches(1)) shouldEqual " catchall"
               }
             }

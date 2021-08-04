@@ -9,45 +9,54 @@ import Standard.Test
 
 spec =
     Test.group "Date" <|
+
         Test.specify "should create local date" <|
             date = Date.new 2020 1 1
             date . year . should_equal 2020
             date . month . should_equal 1
             date . day . should_equal 1
+
         Test.specify "should handle errors when creating local date" <|
             case Date.new 2020 30 30 . catch (x -> x) of
                 Time.Time_Error msg ->
                     msg . should_equal "Invalid value for MonthOfYear (valid values 1 - 12): 30"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
         Test.specify "should format local date using provided pattern" <|
             text = Date.new 2020 12 21 . format "yyyyMMdd"
             text . should_equal "20201221"
+
         Test.specify "should format local date using default pattern" <|
             text = Date.new 2020 12 21 . to_text
             text . should_equal "2020-12-21"
+
         Test.specify "should parse default time format" <|
             text = Date.new 2020 12 21 . to_text
             date = Date.parse text
             date . year . should_equal 2020
             date . month . should_equal 12
             date . day . should_equal 21
+
         Test.specify "should throw error when parsing invalid date" <|
             case Date.parse "birthday" . catch (x -> x) of
                 Time.Time_Error msg ->
                     msg . should_equal "Text 'birthday' could not be parsed at index 0"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
         Test.specify "should parse local date" <|
             date = Date.parse "1999-01-01"
             date . year . should_equal 1999
             date . month . should_equal 1
             date . day . should_equal 1
+
         Test.specify "should parse custom format" <|
             date = Date.parse "1999 1 1" "yyyy M d"
             date . year . should_equal 1999
             date . month . should_equal 1
             date . day . should_equal 1
+
         Test.specify "should throw error when parsing custom format" <|
             date = Date.parse "1999-01-01" "yyyy M d"
             case date.catch (x -> x) of
@@ -55,6 +64,7 @@ spec =
                     msg . should_equal "Text '1999-01-01' could not be parsed at index 4"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
         Test.specify "should convert to time" <|
             time = Date.new 2000 12 21 . to_time (Time_Of_Day.new 12 30 45) Zone.utc
             time . year . should_equal 2000
@@ -65,34 +75,49 @@ spec =
             time . second . should_equal 45
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should convert to Json" <|
             date = Date.new 2001 12 21
             date.to_json.should_equal <|
                 Json.from_pairs [["type", "Date"], ["day", date.day], ["month", date.month], ["year", date.year]]
+
         Test.specify "should add date-based interval" <|
             date = Date.new 1970 + 1.day
             date . year . should_equal 1970
             date . month . should_equal 1
             date . day . should_equal 2
+
         Test.specify "should subtract date-based interval" <|
             date = Date.new 1970 - 1.year
             date . year . should_equal 1969
             date . month . should_equal 1
             date . day . should_equal 1
+
         Test.specify "should support mixed interval operators" <|
             date = Date.new 1970 + 1.month - 1.year
             date . year . should_equal 1969
             date . month . should_equal 2
             date . day . should_equal 1
+
         Test.specify "should throw error when adding time-based interval" <|
             case (Date.new 1970 + 1.hour) . catch (x -> x) of
                 Time.Time_Error message ->
                     message . should_equal "Date does not support time intervals"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
         Test.specify "should throw error when subtracting time-based interval" <|
             case (Date.new 1970 - (1.day - 1.minute)) . catch (x -> x) of
                 Time.Time_Error message ->
                     message . should_equal "Date does not support time intervals"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
+        Test.specify "should be comparable" <|
+            date_1 = Date.parse "2021-01-02"
+            date_2 = Date.parse "2021-01-01"
+            (date_1 == date_2) . should_be_false
+            date_1==date_1 . should_be_true
+            date_1!=date_2 . should_be_true
+            date_1>date_2 . should_be_true
+            date_1<date_2 . should_be_false

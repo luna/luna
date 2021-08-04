@@ -6,56 +6,72 @@ import Standard.Test
 
 spec =
     Test.group "Duration" <|
+
         Test.specify "should create interval seconds" <|
             interval = 5.seconds
             interval.to_vector . should_equal [0, 0, 0, 0, 0, 5, 0]
+
         Test.specify "should create interval months" <|
             interval = 9.months
             interval.to_vector . should_equal [0, 9, 0, 0, 0, 0, 0]
+
         Test.specify "should add days to nanoseconds" <|
             interval = 7.nanoseconds + 3.days
             interval.to_vector . should_equal [0, 0, 3, 0, 0, 0, 7]
+
         Test.specify "should add milliseconds to years" <|
             interval = 4.years + 8.milliseconds
             interval.to_vector . should_equal [4, 0, 0, 0, 0, 0, 8000000]
+
         Test.specify "should substract seconds from months" <|
             interval = 8.months - 8.seconds
             interval.to_vector . should_equal [0, 8, 0, 0, 0, -8, 0]
+
         Test.specify "should subtract years from hours" <|
             interval = 2.hours - 11.years
             interval.to_vector . should_equal [-11, 0, 0, 2, 0, 0, 0]
+
         Test.specify "should support mixed operators" <|
             interval = 2.hours + 12.seconds - 11.years
             interval.to_vector . should_equal [-11, 0, 0, 2, 0, 12, 0]
+
         Test.specify "should create interval between two points in time" <|
             time1 = Time.new 2001 1 2
             time2 = Time.new 2001 2 1
             interval = Duration.between time1 time2
             interval.to_vector . should_equal [0, 0, 0, 720, 0, 0, 0]
+
         Test.specify "should check if time based" <|
             interval = 10.hours
             interval.is_date . should_be_false
             interval.is_time . should_be_true
+
         Test.specify "should check if date based" <|
             interval = 10.years
             interval.is_date . should_be_true
             interval.is_time . should_be_false
+
         Test.specify "should check if mixed based" <|
             interval = 10.years + 3.hours
             interval.is_date . should_be_true
             interval.is_time . should_be_true
+
         Test.specify "should check if empty" <|
             interval = 0.seconds
             interval.is_empty . should_be_true
+
         Test.specify "should normalize periods" <|
             interval = 12.months
             interval.to_vector . should_equal [1, 0, 0, 0, 0, 0, 0]
+
         Test.specify "should normalize addition" <|
             interval = 11.months + 1.month
             interval.to_vector . should_equal [1, 0, 0, 0, 0, 0, 0]
+
         Test.specify "should normalize subtraction" <|
             interval = 13.months - 1.month
             interval.to_vector . should_equal [1, 0, 0, 0, 0, 0, 0]
+
         Test.specify "should check equality" <|
             3.seconds.should_equal 3.seconds
             60.seconds.should_equal 1.minute
@@ -67,8 +83,19 @@ spec =
             18.months.should_equal (1.year + 6.months)
             1.year.should_equal (11.months + 1.month)
             10.years.should_equal 10.years
+
         Test.specify "should convert to Json" <|
             interval = 120.nanoseconds + 30.seconds + 14.hours + 12.days + 1.month + 9.years
             interval.to_json.should_equal <|
                 duration_pairs = [["nanoseconds", interval.nanoseconds], ["seconds", interval.seconds], ["hours", interval.hours], ["days", interval.days], ["months", interval.months], ["years", interval.years]]
                 Json.from_pairs ([["type", "Duration"]] + duration_pairs)
+
+        Test.specify "should be comparable" <|
+            duration_1 = 1.year
+            duration_2 = 24.days
+            duration_1.compare_to duration_1 . should_equal Ordering.Equal
+            duration_1==duration_1 . should_be_true
+            duration_1!=duration_2 . should_be_true
+            duration_1>duration_2 . should_be_true
+            duration_1<duration_2 . should_be_false
+

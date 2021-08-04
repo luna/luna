@@ -262,6 +262,31 @@ type Duration
     == : Duration -> Boolean
     == that = this.to_vector == that.to_vector
 
+    ## Compares `this` to `that` to produce an ordering.
+
+       Arguments:
+       - that: The other `Duration` to compare against.
+
+       > Example
+         Compare two durations for their ordering.
+
+             import Standard.Base.Data.Time.Duration
+
+             example_compare_to =
+                 duration_1 = 1.year
+                 duration_2 = 12.months + 1.day
+                 duration_1.compare_to duration_2
+    compare_to : Duration -> Ordering
+    compare_to that =
+        if this.years > that.years then Ordering.Greater else
+            if this.years < that.years then Ordering.Less else
+                if this.months > that.months then Ordering.Greater else
+                    if this.months < that.months then Ordering.Less else
+                        if this.days > that.days then Ordering.Greater else
+                            if this.days < that.days then Ordering.Less else
+                                duration_sign = this.internal_duration.compareTo that.internal_duration
+                                Ordering.from_sign duration_sign
+
 ## Create a duration of `this` nanoseconds.
 
    > Examples

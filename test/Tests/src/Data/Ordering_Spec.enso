@@ -15,16 +15,28 @@ Ord.compare_to that = if this.number == that.number then Ordering.Equal else
 
 spec =
     Test.group "Ordering" <|
+
         Test.specify "should allow comparing Less" <|
             left = Ord 1032
             right = Ord 101111
             left.compare_to right . should_equal Ordering.Less
+
         Test.specify "should allow comparing Equal" <|
             left = Ord 1032
             right = Ord 1032
             left.compare_to right . should_equal Ordering.Equal
+
         Test.specify "should allow comparing Greater" <|
             left = Ord 1032
             right = Ord -1
             left.compare_to right . should_equal Ordering.Greater
 
+        Test.specify "should allow conversion to sign representation" <|
+            Ordering.Less.to_sign . should_equal -1
+            Ordering.Equal.to_sign . should_equal 0
+            Ordering.Greater.to_sign . should_equal 1
+
+        Test.specify "should allow conversion from sign representation" <|
+            Ordering.from_sign -1 . should_equal Ordering.Less
+            Ordering.from_sign 0 . should_equal Ordering.Equal
+            Ordering.from_sign 1 . should_equal Ordering.Greater

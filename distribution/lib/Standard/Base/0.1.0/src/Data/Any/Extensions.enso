@@ -46,7 +46,7 @@ Any.== that = if Meta.is_same_object this that then True else
                 0.up_to f_1.length . all i-> (f_1.at i) == (f_2.at i)
         Cons (Meta.Error _) (Meta.Error _) -> this_meta.payload == that_meta.payload
         Cons (Meta.Polyglot o_1) (Meta.Polyglot o_2) ->
-            langs_match = this_meta.language == Meta.Java && that_meta.language == Meta.Java
+            langs_match = (this_meta.get_language == Meta.Java) && (that_meta.get_language == Meta.Java)
             if langs_match.not then False else o_1.equals o_2
         ## Constructor comparison is covered by the identity equality.
            Primitive objects should define their own equality.

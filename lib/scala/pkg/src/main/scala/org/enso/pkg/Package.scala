@@ -318,14 +318,42 @@ class PackageManager[F](implicit val fileSystem: FileSystem[F]) {
           pkg.sourceDir.getChild(Package.mainFileName)
         )
 
-      case Template.Example =>
-        val helloTxtPath = new URI("/example/hello.txt")
-        val mainEnsoPath = new URI(s"/example/src/${Package.mainFileName}")
+      case Template.Orders =>
+        val storeDataPath = new URI("/orders/data/store_data.xlsx")
+        val mainEnsoPath  = new URI(s"/orders/src/${Package.mainFileName}")
 
+        pkg.root.getChild("data").createDirectories()
         copyResource(
-          helloTxtPath,
-          pkg.root.getChild("hello.txt")
+          storeDataPath,
+          pkg.root.getChild("data").getChild("store_data.xlsx")
         )
+        copyResource(
+          mainEnsoPath,
+          pkg.sourceDir.getChild(Package.mainFileName)
+        )
+
+      case Template.Restaurants =>
+        val laDistrictsDataPath = new URI("/restaurants/data/la_districts.csv")
+        val restaurantsDataPath = new URI("/restaurants/data/restaurants.csv")
+        val mainEnsoPath        = new URI(s"/restaurants/src/${Package.mainFileName}")
+
+        pkg.root.getChild("data").createDirectories()
+        copyResource(
+          laDistrictsDataPath,
+          pkg.root.getChild("data").getChild("la_districts.csv")
+        )
+        copyResource(
+          restaurantsDataPath,
+          pkg.root.getChild("data").getChild("restaurants.csv")
+        )
+        copyResource(
+          mainEnsoPath,
+          pkg.sourceDir.getChild(Package.mainFileName)
+        )
+
+      case Template.Stargazers =>
+        val mainEnsoPath = new URI(s"/stargazers/src/${Package.mainFileName}")
+
         copyResource(
           mainEnsoPath,
           pkg.sourceDir.getChild(Package.mainFileName)

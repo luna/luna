@@ -1,5 +1,0 @@
-from Standard.Base import all
-
-main =
-    operator1 = Enso_Project.root / "hello.txt"
-    File.read operator1

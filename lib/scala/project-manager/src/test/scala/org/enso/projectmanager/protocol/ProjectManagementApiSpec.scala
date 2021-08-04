@@ -189,22 +189,63 @@ class ProjectManagementApiSpec
       meta shouldBe Symbol("file")
     }
 
-    "create project from example template" in {
+    "create project from orders template" in {
       val projectName = "Foo"
 
       implicit val client = new WsTestClient(address)
 
-      createProject(projectName, projectTemplate = Some("example"))
+      createProject(projectName, projectTemplate = Some("orders"))
 
       val projectDir  = new File(userProjectDir, projectName)
       val packageFile = new File(projectDir, "package.yaml")
       val mainEnso    = Paths.get(projectDir.toString, "src", "Main.enso").toFile
-      val helloTxt    = Paths.get(projectDir.toString, "hello.txt").toFile
+      val storeDataXlsx =
+        Paths.get(projectDir.toString, "data", "store_data.xlsx").toFile
+      val meta = Paths.get(projectDir.toString, ".enso", "project.json").toFile
+
+      packageFile shouldBe Symbol("file")
+      mainEnso shouldBe Symbol("file")
+      storeDataXlsx shouldBe Symbol("file")
+      meta shouldBe Symbol("file")
+    }
+
+    "create project from restaurants template" in {
+      val projectName = "Foo"
+
+      implicit val client = new WsTestClient(address)
+
+      createProject(projectName, projectTemplate = Some("restaurants"))
+
+      val projectDir  = new File(userProjectDir, projectName)
+      val packageFile = new File(projectDir, "package.yaml")
+      val mainEnso    = Paths.get(projectDir.toString, "src", "Main.enso").toFile
+      val laDistrictsCsv =
+        Paths.get(projectDir.toString, "data", "la_districts.csv").toFile
+      val restaurantsCsv =
+        Paths.get(projectDir.toString, "data", "restaurants.csv").toFile
+      val meta = Paths.get(projectDir.toString, ".enso", "project.json").toFile
+
+      packageFile shouldBe Symbol("file")
+      mainEnso shouldBe Symbol("file")
+      laDistrictsCsv shouldBe Symbol("file")
+      restaurantsCsv shouldBe Symbol("file")
+      meta shouldBe Symbol("file")
+    }
+
+    "create project from stargazers template" in {
+      val projectName = "Foo"
+
+      implicit val client = new WsTestClient(address)
+
+      createProject(projectName, projectTemplate = Some("stargazers"))
+
+      val projectDir  = new File(userProjectDir, projectName)
+      val packageFile = new File(projectDir, "package.yaml")
+      val mainEnso    = Paths.get(projectDir.toString, "src", "Main.enso").toFile
       val meta        = Paths.get(projectDir.toString, ".enso", "project.json").toFile
 
       packageFile shouldBe Symbol("file")
       mainEnso shouldBe Symbol("file")
-      helloTxt shouldBe Symbol("file")
       meta shouldBe Symbol("file")
     }
 

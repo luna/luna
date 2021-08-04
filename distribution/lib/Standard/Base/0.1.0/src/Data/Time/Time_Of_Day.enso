@@ -315,3 +315,21 @@ type Time_Of_Day
     format pattern =
         DateTimeFormatter.ofPattern pattern . format this.internal_local_time
 
+    ## Compares `this` to `that` to produce an ordering.
+
+       Arguments:
+       - that: The other `Time_Of_Day` to compare against.
+
+       > Example
+         Compare two times for their ordering.
+
+             import Standard.Base.Data.Time.Time_Of_Day
+
+             example_compare_to =
+                 time_1 = Time_Of_Day.new hour=2 minute=30
+                 time_2 = Time_Of_Day.new minute=50
+                 time_1.compare_to time_2
+    compare_to : Time_Of_Day -> Ordering
+    compare_to that =
+        sign = this.internal_local_time.compareTo that.internal_local_time
+        Ordering.from_sign sign

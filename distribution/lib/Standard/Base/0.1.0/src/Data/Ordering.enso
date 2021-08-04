@@ -4,6 +4,19 @@ from Standard.Builtins import Less, Equal, Greater
 
 from Standard.Builtins export Less, Equal, Greater
 
+## Converts a sign-based representation of ordering to Enso's native ordering.
+
+   Arguments:
+   - sign: The number representing the relative ordering of two entities.
+
+   > Example
+     Convert the number 0 to an Enso ordering.
+
+         Ordering.from_sign 0
+from_sign : Integer -> Ordering
+from_sign sign = if sign == 0 then Equal else
+    if sign > 0 then Greater else Less
+
 ## Types representing the ordering of values.
 
    These are intended to be returned from the `compare_to` function, that has a
@@ -27,5 +40,6 @@ type Ordering
     to_sign : Integer
     to_sign = case this of
         Less -> -1
-        Equal -> 0
         Greater -> 1
+        Equal -> 0
+

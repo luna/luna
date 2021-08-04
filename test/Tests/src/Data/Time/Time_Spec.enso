@@ -7,6 +7,7 @@ import Standard.Test
 
 spec =
     Test.group "Time" <|
+
         Test.specify "should create time" <|
             time = Time.new 1970 (zone = Zone.utc)
             time . year . should_equal 1970
@@ -17,24 +18,29 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should handle errors when creating time" <|
             case Time.new 1970 0 0 . catch (x -> x) of
                 Time.Time_Error msg ->
                     msg . should_equal "Invalid value for MonthOfYear (valid values 1 - 12): 0"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
         Test.specify "should format using provided pattern" <|
             text = Time.new 1970 (zone = Zone.utc) . format "yyyy-MM-dd'T'HH:mm:ss"
             text . should_equal "1970-01-01T00:00:00"
+
         Test.specify "should format using default pattern" <|
             text = Time.new 1970 (zone = Zone.utc) . to_text
             text . should_equal "1970-01-01T00:00:00Z[UTC]"
+
         Test.specify "should convert to Json" <|
             time = Time.new 1970 12 21 (zone = Zone.utc)
             time.to_json.should_equal <|
                 zone_pairs = [["zone", Zone.utc]]
                 time_pairs = [["year", time.year], ["month", time.month], ["day", time.day], ["hour", time.hour], ["minute", time.minute], ["second", time.second], ["nanosecond", time.nanosecond]]
                 Json.from_pairs ([["type", "Time"]] + time_pairs + zone_pairs)
+
         Test.specify "should parse default time format" <|
             text = Time.new 1970 (zone = Zone.utc) . to_text
             time = Time.parse text
@@ -46,6 +52,7 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should parse local time adding system zone" <|
             time = Time.parse "1970-01-01T00:00:01"
             time . year . should_equal 1970
@@ -56,14 +63,17 @@ spec =
             time . second . should_equal 1
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.system.zone_id
+
         Test.specify "should parse time Z" <|
             time = Time.parse "1970-01-01T00:00:01Z"
             time . to_epoch_seconds . should_equal 1
             time . zone . zone_id . should_equal "Z"
+
         Test.specify "should parse time UTC" <|
             time = Time.parse "1970-01-01T00:00:01Z[UTC]"
             time . to_epoch_seconds . should_equal 1
             time . zone . zone_id . should_equal "UTC"
+
         Test.specify "should parse time with nanoseconds" <|
             time = Time.parse "1970-01-01T00:00:01.123456789Z"
             time . year . should_equal 1970
@@ -74,6 +84,7 @@ spec =
             time . second . should_equal 1
             time . nanosecond . should_equal 123456789
             time . zone . zone_id . should_equal "Z"
+
         Test.specify "should parse time with offset-based zone" <|
             time = Time.parse "1970-01-01T00:00:01+01:00"
             time . year . should_equal 1970
@@ -84,6 +95,7 @@ spec =
             time . second . should_equal 1
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal (Zone.new 1 . zone_id)
+
         Test.specify "should parse time with id-based zone" <|
             time = Time.parse "1970-01-01T00:00:01+01:00[Europe/Paris]"
             time . year . should_equal 1970
@@ -94,12 +106,14 @@ spec =
             time . second . should_equal 1
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal "Europe/Paris"
+
         Test.specify "should throw error when parsing invalid time" <|
             case Time.parse "2008-1-1" . catch (x -> x) of
                 Time.Time_Error msg ->
                     msg . should_equal "Text '2008-1-1' could not be parsed at index 5"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
         Test.specify "should parse custom format of zoned time" <|
             time = Time.parse "2020-05-06 04:30:20 UTC" "yyyy-MM-dd HH:mm:ss z"
             time . year . should_equal 2020
@@ -110,6 +124,7 @@ spec =
             time . second . should_equal 20
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal "Etc/UTC"
+
         Test.specify "should parse custom format of local time" <|
             time = Time.parse "06 of May 2020 at 04:30AM" "dd 'of' MMMM yyyy 'at' hh:mma"
             time . year . should_equal 2020
@@ -119,6 +134,7 @@ spec =
             time . minute . should_equal 30
             time . second . should_equal 0
             time . nanosecond . should_equal 0
+
         Test.specify "should throw error when parsing custom format" <|
             time = Time.parse "2008-01-01" "yyyy-MM-dd'T'HH:mm:ss'['z']'"
             case time.catch (x -> x) of
@@ -126,12 +142,15 @@ spec =
                     msg . should_equal "Text '2008-01-01' could not be parsed at index 10"
                 result ->
                     Test.fail ("Unexpected result: " + result.to_text)
+
         Test.specify "should get epoch seconds" <|
             time = Time.new 1970 1 1 0 0 8 (zone = Zone.utc)
             time . to_epoch_seconds . should_equal 8
+
         Test.specify "should get epoch millis" <|
             time = Time.new 1970 1 1 0 0 8 (zone = Zone.utc)
             time . to_epoch_milliseconds . should_equal 8000
+
         Test.specify "should set offset-based timezone" <|
             tz = Zone.new 1 1 1
             time = Time.new 1970 (zone = Zone.utc) . at_zone tz
@@ -143,6 +162,7 @@ spec =
             time . second . should_equal 1
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal tz.zone_id
+
         Test.specify "should set id-based timezone" <|
             tz = Zone.parse "Europe/Moscow"
             time = Time.new 1970 (zone = Zone.utc) . at_zone tz
@@ -154,28 +174,33 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal tz.zone_id
+
         Test.specify "should get time of day from offsed-based time" <|
             time = Time.parse "1970-01-01T00:00:01+01:00" . time_of_day
             time . hour . should_equal 0
             time . minute . should_equal 0
             time . second . should_equal 1
             time . nanosecond . should_equal 0
+
         Test.specify "should get time of day from id-based time" <|
             time = Time.parse "1970-01-01T00:00:01+01:00[Europe/Paris]" . time_of_day
             time . hour . should_equal 0
             time . minute . should_equal 0
             time . second . should_equal 1
             time . nanosecond . should_equal 0
+
         Test.specify "should get date from offsed-based time" <|
             time = Time.parse "1970-01-01T00:00:01+01:00" . date
             time . year . should_equal 1970
             time . month . should_equal 1
             time . day . should_equal 1
+
         Test.specify "should get date from id-based time" <|
             time = Time.parse "1970-01-01T00:00:01+01:00[Europe/Paris]" . date
             time . year . should_equal 1970
             time . month . should_equal 1
             time . day . should_equal 1
+
         Test.specify "should add time interval" <|
             time = Time.new 1970 (zone = Zone.utc) + 1.nanosecond
             time . year . should_equal 1970
@@ -186,6 +211,7 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 1
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should add date interval" <|
             time = Time.new 1970 (zone = Zone.utc) + 1.month
             time . year . should_equal 1970
@@ -196,6 +222,7 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should add mixed date time interval" <|
             time = Time.new 1970 (zone = Zone.utc) + (1.month + 3.hours)
             time . year . should_equal 1970
@@ -206,6 +233,7 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should subtract time interval" <|
             time = Time.new 1970 (zone = Zone.utc) - 1.hour
             time . year . should_equal 1969
@@ -216,6 +244,7 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should subtract date interval" <|
             time = Time.new 1970 (zone = Zone.utc) - 1.month
             time . year . should_equal 1969
@@ -226,6 +255,7 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should subtract mixed date time interval" <|
             time = Time.new 1970 (zone = Zone.utc) - (1.month - 3.hours)
             time . year . should_equal 1969
@@ -236,6 +266,7 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
         Test.specify "should support mixed interval operators" <|
             time = Time.new 1970 (zone = Zone.utc) - 1.month + 12.hours
             time . year . should_equal 1969
@@ -246,3 +277,13 @@ spec =
             time . second . should_equal 0
             time . nanosecond . should_equal 0
             time . zone . zone_id . should_equal Zone.utc.zone_id
+
+        Test.specify "should be comparable" <|
+            time_1 = Time.parse "2021-01-01T00:30:12.7102[UTC]"
+            time_2 = Time.parse "2021-01-01T04:00:10.0+04:00"
+            (time_1 == time_2) . should_be_false
+            time_1==time_1 . should_be_true
+            time_1!=time_2 . should_be_true
+            time_1>time_2 . should_be_true
+            time_1<time_2 . should_be_false
+

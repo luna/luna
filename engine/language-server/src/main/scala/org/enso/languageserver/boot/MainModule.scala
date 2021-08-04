@@ -354,7 +354,11 @@ class MainModule(serverConfig: LanguageServerConfig, logLevel: LogLevel) {
     new BinaryWebSocketServer(
       InboundMessageDecoder,
       BinaryEncoder.empty,
-      new BinaryConnectionControllerFactory(fileManager)
+      new BinaryConnectionControllerFactory(fileManager),
+      BinaryWebSocketServer.Config(
+        outgoingBufferSize = 100,
+        lazyMessageTimeout = 10.seconds
+      )
     )
   log.trace("Created Binary WebSocket Server [{}].", binaryServer)
 

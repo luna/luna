@@ -304,3 +304,16 @@ type Date
     format : Text -> Text
     format pattern = DateTimeFormatter.ofPattern pattern . format this.internal_local_date
 
+    ## Compares `this` to `that` to produce an ordering.
+
+       Arguments:
+       - that: The other `Date` to compare against.
+
+       > Example
+         Compare two dates for their ordering.
+
+         (Date.new 2000).compare_to (Date.new 2001)
+    compare_to : Date -> Ordering
+    compare_to that =
+        sign = this.internal_local_date.compareTo that.internal_local_date
+        Ordering.from_sign sign

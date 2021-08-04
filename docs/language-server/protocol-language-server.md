@@ -442,6 +442,10 @@ interface SuggestionEntryModule {
 
   /** The fully qualified module name re-exporting this module. */
   reexport?: string;
+
+  /** The rendered HTMl of the documentation string. */
+
+  documentationHtml?: string;
 }
 
 interface SuggestionEntryAtom {
@@ -465,6 +469,8 @@ interface SuggestionEntryAtom {
 
   /** The fully qualified module name re-exporting this module. */
   reexport?: string;
+
+  /** The rendered HTMl of the documentation string. */
 
   documentationHtml?: string;
 }
@@ -494,6 +500,8 @@ interface SuggestionEntryMethod {
   /** The fully qualified module name re-exporting this module. */
   reexport?: string;
 
+  /** The rendered HTMl of the documentation string. */
+
   documentationHtml?: string;
 }
 
@@ -515,6 +523,10 @@ interface SuggestionEntryFunction {
 
   /** The scope where the function is defined. */
   scope: SuggestionEntryScope;
+
+  /** The rendered HTMl of the documentation string. */
+
+  documentationHtml?: string;
 }
 
 interface SuggestionEntryLocal {
@@ -532,6 +544,10 @@ interface SuggestionEntryLocal {
 
   /** The scope where the value is defined. */
   scope: SuggestionEntryScope;
+
+  /** The rendered HTMl of the documentation string. */
+
+  documentationHtml?: string;
 }
 ```
 

@@ -5,6 +5,7 @@ import Standard.Base.Data.Time.Date
 import Standard.Base.Data.Time.Duration
 import Standard.Base.Data.Time.Time_Of_Day
 import Standard.Base.Data.Time.Zone
+import Standard.Base.Data.Ordering
 
 polyglot java import java.time.format.DateTimeFormatter
 polyglot java import java.time.ZonedDateTime
@@ -452,6 +453,20 @@ type Time
     format : Text -> Text
     format pattern =
         DateTimeFormatter.ofPattern pattern . format this.internal_zoned_date_time
+
+    ## Compares `this` to `that` to produce an ordering.
+
+       Arguments:
+       - that: The other `Time` to compare against.
+
+       > Example
+         Compare two times for their ordering.
+
+         (Time.new 2000).compare_to (Time.new 2001)
+    compare_to : Time -> Ordering
+    compare_to that =
+        sign = this.internal_zoned_date_time.compareTo that.internal_zoned_date_time
+        Ordering.from_sign sign
 
 type Time_Error
 

@@ -1,5 +1,21 @@
 # Enso Next
 
+# Enso 0.2.19 (2021-08-03)
+
+## Compiler/Interpreter
+
+- Fixed a bug with module documentation where it would associate the wrong
+  doc-block with the module
+  ([#1919](https://github.com/enso-org/enso/pull/1919)).
+
+## Known Issues
+
+- This is a beta release, so please see the
+  [issue tracker](https://github.com/enso-org/enso/issues?q=is%3Aissue+is%3Aopen+created%3A%3C2021-08-03)
+  for issues opened before the release date.
+
+# Enso 0.2.18 (2021-08-02)
+
 ## Libraries
 
 - Added support for writing tables to XLSX spreadsheets
@@ -8,6 +24,14 @@
   ([#1910](https://github.com/enso-org/enso/pull/1910)).
 - Fixed a bug where CSV files with very long lines could not be parsed
   ([#1914](https://github.com/enso-org/enso/pull/1914)).
+- Added ordering comparisons for `Time`, `Time_Of_Day`, `Date` and `Duration`
+  ([#1916](https://github.com/enso-org/enso/pull/1916)).
+
+## Known Issues
+
+- This is a beta release, so please see the
+  [issue tracker](https://github.com/enso-org/enso/issues?q=is%3Aissue+is%3Aopen+created%3A%3C2021-08-02)
+  for issues opened before the release date.
 
 # Enso 0.2.17 (2021-07-28)
 

@@ -117,6 +117,16 @@ jobs:
           graalvm-version: ${{ env.graalVersion }}
           java-version: ${{ env.javaVersion }}
           native-image: true
+      - name: Download Project Template Files
+        working-directory: repo
+        shell: bash
+        run: |
+          curl --retry 4 --retry-connrefused -fsSL -o lib/scala/pkg/src/main/resources/orders/data/store_data.xlsx https://github.com/enso-org/project-templates/raw/main/Orders/data/store_data.xlsx
+          curl --retry 4 --retry-connrefused -fsSL -o lib/scala/pkg/src/main/resources/orders/src/Main.enso https://github.com/enso-org/project-templates/raw/main/Orders/src/Main.enso
+          curl --retry 4 --retry-connrefused -fsSL -o lib/scala/pkg/src/main/resources/restaurants/data/la_districts.csv https://github.com/enso-org/project-templates/raw/main/Restaurants/data/la_districts.csv
+          curl --retry 4 --retry-connrefused -fsSL -o lib/scala/pkg/src/main/resources/restaurants/data/restaurants.csv https://github.com/enso-org/project-templates/raw/main/Restaurants/data/restaurants.csv
+          curl --retry 4 --retry-connrefused -fsSL -o lib/scala/pkg/src/main/resources/restaurants/src/Main.enso https://github.com/enso-org/project-templates/raw/main/Restaurants/src/Main.enso
+          curl --retry 4 --retry-connrefused -fsSL -o lib/scala/pkg/src/main/resources/stargazers/src/Main.enso https://github.com/enso-org/project-templates/raw/main/Stargazers/src/Main.enso
       - name: Set Up SBT
         shell: bash
         run: |
