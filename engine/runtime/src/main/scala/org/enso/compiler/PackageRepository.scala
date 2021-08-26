@@ -18,6 +18,7 @@ import org.enso.logger.masking.MaskedPath
 import org.enso.pkg.{Package, PackageManager, QualifiedName}
 
 import java.nio.file.Path
+import scala.collection.concurrent
 import scala.util.Try
 
 /** Manages loaded packages and modules. */
@@ -35,10 +36,21 @@ trait PackageRepository {
   ): Either[PackageRepository.Error, Unit]
 
   /** Get a sequence of currently loaded packages. */
-  def getLoadedPackages(): Seq[Package[TruffleFile]]
+  def getLoadedPackages: Seq[Package[TruffleFile]]
 
   /** Get a sequence of currently loaded modules. */
-  def getLoadedModules(): Seq[Module]
+  def getLoadedModules: Seq[Module]
+
+  /** Get the mapping from qualified module names (equivalent to
+    * [[QualifiedName.toString]]) to modules.
+    *
+    * This map may be updated concurrently.
+    */
+  def getModuleMap: collection.concurrent.Map[String, Module]
+
+  /** Gets a frozen form of the module map that cannot be updated concurrently.
+    */
+  def freezeModuleMap: Map[String, Module]
 
   /** Get a loaded module by its qualified name. */
   def getLoadedModule(qualifiedName: String): Option[Module]
@@ -130,9 +142,22 @@ object PackageRepository {
       collection.concurrent.TrieMap(builtinsName -> None)
     }
 
-    /** The mapping containing loaded modules. */
+    /** The mapping containing loaded modules.
+      *
+      * We use [[String]] as the key as we often index into this map based on
+      * qualified names that come from interop (via
+      * [[org.enso.interpreter.runtime.scope.TopLevelScope]]). These arrive as
+      * Strings, and constantly converting them into [[QualifiedName]]s would
+      * add more overhead than is probably necessary.
+      */
     val loadedModules: collection.concurrent.Map[String, Module] =
       collection.concurrent.TrieMap(Builtins.MODULE_NAME -> builtins.getModule)
+
+    /** @inheritdoc */
+    override def getModuleMap: concurrent.Map[String, Module] = loadedModules
+
+    /** @inheritdoc */
+    override def freezeModuleMap: Map[String, Module] = loadedModules.toMap
 
     /** @inheritdoc */
     override def registerMainProjectPackage(
@@ -235,11 +260,11 @@ object PackageRepository {
       }
 
     /** @inheritdoc */
-    override def getLoadedModules(): Seq[Module] =
+    override def getLoadedModules: Seq[Module] =
       loadedModules.values.toSeq
 
     /** @inheritdoc */
-    override def getLoadedPackages(): Seq[Package[TruffleFile]] =
+    override def getLoadedPackages: Seq[Package[TruffleFile]] =
       loadedPackages.values.toSeq.flatten
 
     /** @inheritdoc */
@@ -352,7 +377,7 @@ object PackageRepository {
         languageHome        = homeManager,
         edition             = edition,
         preferLocalLibraries =
-          projectPackage.map(_.config.preferLocalLibraries).getOrElse(false)
+          projectPackage.exists(_.config.preferLocalLibraries)
       )
     new Default(
       resolvingLibraryProvider,
