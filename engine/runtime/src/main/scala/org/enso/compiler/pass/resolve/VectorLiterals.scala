@@ -5,8 +5,10 @@ import org.enso.compiler.core.IR
 import org.enso.compiler.core.ir.MetadataStorage.ToPair
 import org.enso.compiler.data.BindingsMap
 import org.enso.compiler.data.BindingsMap.ModuleReference
+import org.enso.compiler.exception.CompilerError
 import org.enso.compiler.pass.IRPass
 import org.enso.compiler.pass.analyse.BindingAnalysis
+import org.enso.interpreter.runtime.Module
 
 case object VectorLiterals extends IRPass {
 
@@ -21,6 +23,9 @@ case object VectorLiterals extends IRPass {
 
   /** The passes that are invalidated by running this pass. */
   override val invalidatedPasses: Seq[IRPass] = Seq()
+
+  /** The name of the module that contains the Enso stdlib vector definition. */
+  val vectorModuleName: String = "Standard.Base.Data.Vector"
 
   /** Executes the pass on the provided `ir`, and returns a possibly transformed
     * or annotated version of `ir`.
@@ -65,17 +70,31 @@ case object VectorLiterals extends IRPass {
   }
 
   private def vectorCons(bindings: BindingsMap): IR.Expression = {
-    val module = bindings.resolvedImports
-      .flatMap(imp =>
-        imp.module :: imp.module.getIr
-          .unsafeGetMetadata(
-            BindingAnalysis,
-            "no binding analyis on an imported module"
+    val modules: List[Module] = bindings.resolvedImports.flatMap { imp =>
+      imp.module match {
+        case ModuleReference.Concrete(module) =>
+          module :: module.getIr
+            .unsafeGetMetadata(
+              BindingAnalysis,
+              "no binding analysis on an imported module"
+            )
+            .resolvedExports
+            .map { export =>
+              export.module match {
+                case ModuleReference.Concrete(module) => module
+                case ModuleReference.Abstract(name) =>
+                  throw new CompilerError(
+                    s"Abstract reference to module $name found during VectorLiterals."
+                  )
+              }
+            }
+        case ModuleReference.Abstract(name) =>
+          throw new CompilerError(
+            s"Abstract reference to module $name found during VectorLiterals."
           )
-          .resolvedExports
-          .map(_.module)
-      )
-      .find(_.getName.toString == "Standard.Base.Data.Vector")
+      }
+    }
+    val module = modules.find(_.getName.toString == vectorModuleName)
     val name = IR.Name.Literal(
       "<Sequence Macro>",
       isReferent = true,
@@ -112,7 +131,7 @@ case object VectorLiterals extends IRPass {
           IR.CallArgument
             .Specified(None, trans.copy(location = None), None, None)
         ),
-        false,
+        hasDefaultsSuspended = false,
         trans.location
       )
     }

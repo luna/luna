@@ -151,7 +151,16 @@ class IrToTruffle(
         "No binding analysis at the point of codegen."
       )
       .resolvedExports
-      .foreach { exp => moduleScope.addExport(exp.module.getScope) }
+      .foreach { exp =>
+        exp.module match {
+          case ModuleReference.Concrete(module) =>
+            moduleScope.addExport(module.getScope)
+          case ModuleReference.Abstract(name) =>
+            throw new CompilerError(
+              s"Abstract reference to module $name found during codegen."
+            )
+        }
+      }
     val imports = module.imports
     val atomDefs = module.bindings.collect {
       case atom: IR.Module.Scope.Definition.Atom => atom

@@ -37,6 +37,24 @@ case class BindingsMap(
 
   var exportedSymbols: Map[String, List[ResolvedName]] = Map()
 
+  /** Convert this [[BindingsMap]] instance to use abstract module references.
+    *
+    * @return `this` with module references converted to abstract
+    */
+  def toAbstract: BindingsMap = {
+    ???
+  }
+
+  /** Convert this [[BindingsMap]] instance to use concrete module references.
+    *
+    * @param moduleMap the mapping from qualified module names to module
+    *                  instances
+    * @return `this` with module references converted to concrete
+    */
+  def toConcrete(moduleMap: ModuleMap): Option[BindingsMap] = {
+    ???
+  }
+
   private def findConstructorCandidates(
     name: String
   ): List[ResolvedConstructor] = {
@@ -74,7 +92,7 @@ case class BindingsMap(
   ): List[ResolvedName] = {
     resolvedImports
       .filter(_.importDef.getSimpleName.name == name)
-      .map(res => ResolvedModule(ModuleReference.Concrete(res.module)))
+      .map(res => ResolvedModule(res.module))
   }
 
   private def findExportedCandidatesInImports(
@@ -84,12 +102,19 @@ case class BindingsMap(
     resolvedImports
       .flatMap { imp =>
         if (imp.importDef.allowsAccess(name)) {
-          imp.module.getIr
-            .unsafeGetMetadata(
-              BindingAnalysis,
-              "Wrong pass ordering. Running resolution on an unparsed module."
-            )
-            .findExportedSymbolsFor(name)
+          imp.module match {
+            case ModuleReference.Concrete(module) =>
+              module.getIr
+                .unsafeGetMetadata(
+                  BindingAnalysis,
+                  "Wrong pass ordering. Running resolution on an unparsed module."
+                )
+                .findExportedSymbolsFor(name)
+            case ModuleReference.Abstract(name) =>
+              throw new CompilerError(
+                s"Cannot find export candidates for abstract module reference $name."
+              )
+          }
         } else { List() }
       }
   }
@@ -223,7 +248,7 @@ case class BindingsMap(
           Set(
             SymbolRestriction.AllowedResolution(
               exp.getSimpleName.name.toLowerCase,
-              Some(ResolvedModule(ModuleReference.Concrete(mod)))
+              Some(ResolvedModule(mod))
             )
           )
         )
@@ -442,10 +467,28 @@ object BindingsMap {
     * @param symbols any symbol restrictions connected to the export.
     */
   case class ExportedModule(
-    module: Module,
+    module: ModuleReference,
     exportedAs: Option[String],
     symbols: SymbolRestriction
-  )
+  ) {
+
+    /** Convert the internal [[ModuleReference]] to an abstract reference.
+      *
+      * @return `this` with its module reference made abstract
+      */
+    def toAbstract: ExportedModule = {
+      this.copy(module = module.toAbstract)
+    }
+
+    /** Convert the internal [[ModuleReference]] to a concrete reference.
+      *
+      * @param moduleMap the mapping from qualified names to modules
+      * @return `this` with its module reference made concrete
+      */
+    def toConcrete(moduleMap: ModuleMap): Option[ExportedModule] = {
+      module.toConcrete(moduleMap).map(x => this.copy(module = x))
+    }
+  }
 
   /** A representation of a resolved import statement.
     *
@@ -456,8 +499,26 @@ object BindingsMap {
   case class ResolvedImport(
     importDef: IR.Module.Scope.Import.Module,
     exports: Option[IR.Module.Scope.Export.Module],
-    module: Module
-  )
+    module: ModuleReference
+  ) {
+
+    /** Convert the internal [[ModuleReference]] to an abstract reference.
+      *
+      * @return `this` with its module reference made abstract
+      */
+    def toAbstract: ResolvedImport = {
+      this.copy(module = module.toAbstract)
+    }
+
+    /** Convert the internal [[ModuleReference]] to a concrete reference.
+      *
+      * @param moduleMap the mapping from qualified names to modules
+      * @return `this` with its module reference made concrete
+      */
+    def toConcrete(moduleMap: ModuleMap): Option[ResolvedImport] = {
+      module.toConcrete(moduleMap).map(x => this.copy(module = x))
+    }
+  }
 
   /** A representation of a constructor.
     *

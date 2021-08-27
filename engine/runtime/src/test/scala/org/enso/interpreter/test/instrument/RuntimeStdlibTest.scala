@@ -1,5 +1,6 @@
 package org.enso.interpreter.test.instrument
 
+import org.enso.compiler.pass.resolve.VectorLiterals
 import org.enso.interpreter.test.Metadata
 import org.enso.pkg.{Package, PackageManager}
 import org.enso.polyglot._
@@ -217,7 +218,7 @@ class RuntimeStdlibTest
             )
           ) if module.contains("Vector") =>
         (xs.nonEmpty || as.nonEmpty) shouldBe true
-        xs.toVector.head.suggestion.module shouldEqual "Standard.Base.Data.Vector"
+        xs.toVector.head.suggestion.module shouldEqual VectorLiterals.vectorModuleName
     }
     stdlibSuggestions.nonEmpty shouldBe true
 

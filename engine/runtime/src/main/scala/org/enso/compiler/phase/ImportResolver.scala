@@ -3,6 +3,7 @@ package org.enso.compiler.phase
 import org.enso.compiler.Compiler
 import org.enso.compiler.core.IR
 import org.enso.compiler.data.BindingsMap
+import org.enso.compiler.data.BindingsMap.ModuleReference
 import org.enso.compiler.exception.CompilerError
 import org.enso.compiler.pass.analyse.BindingAnalysis
 import org.enso.editions.LibraryName
@@ -78,7 +79,13 @@ class ImportResolver(compiler: Compiler) {
                         case Some(module) =>
                           (
                             imp,
-                            Some(BindingsMap.ResolvedImport(imp, exp, module))
+                            Some(
+                              BindingsMap.ResolvedImport(
+                                imp,
+                                exp,
+                                ModuleReference.Concrete(module)
+                              )
+                            )
                           )
                         case None =>
                           (
@@ -112,7 +119,15 @@ class ImportResolver(compiler: Compiler) {
           }
           // continue with updated stack
           go(
-            stack.pushAll(currentLocal.resolvedImports.map(_.module)),
+            stack.pushAll(currentLocal.resolvedImports.map(x => {
+              x.module match {
+                case ModuleReference.Concrete(module) => module
+                case ModuleReference.Abstract(name) =>
+                  throw new CompilerError(
+                    s"Abstract reference to module $name found in ImportResolver."
+                  )
+              }
+            })),
             seen += current
           )
         }
