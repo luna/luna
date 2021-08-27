@@ -37,7 +37,7 @@ class BindingAnalysisTest extends CompilerTest {
       * @param context the module context in which analysis takes place
       * @return [[ir]], with tail call analysis metadata attached
       */
-    def analyse(implicit context: ModuleContext) = {
+    def analyse(implicit context: ModuleContext): IR.Module = {
       BindingAnalysis.runModule(ir, context)
     }
   }

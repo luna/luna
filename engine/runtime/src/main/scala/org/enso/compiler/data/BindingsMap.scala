@@ -42,7 +42,14 @@ case class BindingsMap(
     * @return `this` with module references converted to abstract
     */
   def toAbstract: BindingsMap = {
-    ???
+    val copy = this.copy(currentModule = currentModule.toAbstract)
+    copy.resolvedImports = this.resolvedImports.map(_.toAbstract)
+    copy.resolvedExports = this.resolvedExports.map(_.toAbstract)
+    copy.exportedSymbols = this.exportedSymbols.map { case (key, value) =>
+      key -> value.map(name => name.toAbstract)
+    }
+
+    copy
   }
 
   /** Convert this [[BindingsMap]] instance to use concrete module references.
@@ -52,7 +59,49 @@ case class BindingsMap(
     * @return `this` with module references converted to concrete
     */
   def toConcrete(moduleMap: ModuleMap): Option[BindingsMap] = {
-    ???
+    val newMap = this.currentModule.toConcrete(moduleMap).map { module =>
+      this.copy(currentModule = module)
+    }
+
+    val withImports: Option[BindingsMap] = newMap.flatMap { bindings =>
+      val newImports = this.resolvedImports.map(_.toConcrete(moduleMap))
+      if (newImports.exists(_.isEmpty)) {
+        None
+      } else {
+        bindings.resolvedImports = newImports.map(_.get)
+        Some(bindings)
+      }
+    }
+
+    val withExports: Option[BindingsMap] = withImports.flatMap { bindings =>
+      val newExports = this.resolvedExports.map(_.toConcrete(moduleMap))
+      if (newExports.exists(_.isEmpty)) {
+        None
+      } else {
+        bindings.resolvedExports = newExports.map(_.get)
+        Some(bindings)
+      }
+    }
+
+    val withSymbols: Option[BindingsMap] = withExports.flatMap { bindings =>
+      val newSymbols = this.exportedSymbols.map { case (key, value) =>
+        val newValue = value.map(_.toConcrete(moduleMap))
+        if (newValue.exists(_.isEmpty)) {
+          key -> None
+        } else {
+          key -> Some(newValue.map(_.get))
+        }
+      }
+
+      if (newSymbols.exists { case (_, v) => v.isEmpty }) {
+        None
+      } else {
+        bindings.exportedSymbols = newSymbols.map { case (k, v) => k -> v.get }
+        Some(bindings)
+      }
+    }
+
+    withSymbols
   }
 
   private def findConstructorCandidates(
@@ -543,6 +592,19 @@ object BindingsMap {
     */
   sealed trait ResolvedName {
     def module: ModuleReference
+
+    /** Convert the resolved name to abstract form.
+      *
+      * @return `this`, converted to abstract form
+      */
+    def toAbstract: ResolvedName
+
+    /** Convert the resolved name to concrete form.
+      *
+      * @param moduleMap the mapping from qualified names to modules
+      * @return `this`, converted to concrete form
+      */
+    def toConcrete(moduleMap: ModuleMap): Option[ResolvedName]
   }
 
   /** A representation of a name being resolved to a constructor.
@@ -551,13 +613,39 @@ object BindingsMap {
     * @param cons a representation of the constructor.
     */
   case class ResolvedConstructor(module: ModuleReference, cons: Cons)
-      extends ResolvedName
+      extends ResolvedName {
+
+    /** @inheritdoc */
+    override def toAbstract: ResolvedConstructor = {
+      this.copy(module = module.toAbstract)
+    }
+
+    /** @inheritdoc */
+    override def toConcrete(
+      moduleMap: ModuleMap
+    ): Option[ResolvedConstructor] = {
+      module.toConcrete(moduleMap).map(module => this.copy(module = module))
+    }
+  }
 
   /** A representation of a name being resolved to a module.
     *
     * @param module the module the name resolved to.
     */
-  case class ResolvedModule(module: ModuleReference) extends ResolvedName
+  case class ResolvedModule(module: ModuleReference) extends ResolvedName {
+
+    /** @inheritdoc */
+    override def toAbstract: ResolvedModule = {
+      this.copy(module = module.toAbstract)
+    }
+
+    /** @inheritdoc */
+    override def toConcrete(
+      moduleMap: ModuleMap
+    ): Option[ResolvedModule] = {
+      module.toConcrete(moduleMap).map(module => this.copy(module = module))
+    }
+  }
 
   /** A representation of a name being resolved to a method call.
     *
@@ -565,7 +653,20 @@ object BindingsMap {
     * @param method the method representation.
     */
   case class ResolvedMethod(module: ModuleReference, method: ModuleMethod)
-      extends ResolvedName
+      extends ResolvedName {
+
+    /** @inheritdoc */
+    override def toAbstract: ResolvedMethod = {
+      this.copy(module = module.toAbstract)
+    }
+
+    /** @inheritdoc */
+    override def toConcrete(
+      moduleMap: ModuleMap
+    ): Option[ResolvedMethod] = {
+      module.toConcrete(moduleMap).map(module => this.copy(module = module))
+    }
+  }
 
   /** A representation of a name being resolved to a polyglot symbol.
     *
@@ -574,7 +675,20 @@ object BindingsMap {
   case class ResolvedPolyglotSymbol(
     module: ModuleReference,
     symbol: PolyglotSymbol
-  ) extends ResolvedName
+  ) extends ResolvedName {
+
+    /** @inheritdoc */
+    override def toAbstract: ResolvedPolyglotSymbol = {
+      this.copy(module = module.toAbstract)
+    }
+
+    /** @inheritdoc */
+    override def toConcrete(
+      moduleMap: ModuleMap
+    ): Option[ResolvedPolyglotSymbol] = {
+      module.toConcrete(moduleMap).map(module => this.copy(module = module))
+    }
+  }
 
   /** A representation of an error during name resolution.
     */
