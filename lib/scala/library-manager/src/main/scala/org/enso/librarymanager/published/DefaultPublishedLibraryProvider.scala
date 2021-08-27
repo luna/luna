@@ -27,7 +27,7 @@ class DefaultPublishedLibraryProvider(
     version: SemVer,
     recommendedRepository: Editions.Repository
   ): Try[Path] = {
-    val cached = findCached(libraryName, version)
+    val cached = findCachedLibrary(libraryName, version)
     cached.map(Success(_)).getOrElse {
       logger.trace(
         s"$libraryName was not found in any caches, it will need to be " +

@@ -31,7 +31,7 @@ class CachedLibraryProvider(caches: List[ReadOnlyLibraryCache])
   }
 
   /** Looks for the library in the known caches. */
-  final protected def findCached(
+  override def findCachedLibrary(
     libraryName: LibraryName,
     version: SemVer
   ): Option[Path] = findCachedHelper(libraryName, version, caches)
@@ -42,7 +42,7 @@ class CachedLibraryProvider(caches: List[ReadOnlyLibraryCache])
     version: SemVer,
     recommendedRepository: Editions.Repository
   ): Try[Path] =
-    findCached(libraryName, version)
+    findCachedLibrary(libraryName, version)
       .toRight(
         LibraryResolutionError(
           s"Library [$libraryName:$version] was not found in the cache."
@@ -54,5 +54,5 @@ class CachedLibraryProvider(caches: List[ReadOnlyLibraryCache])
   override def isLibraryCached(
     libraryName: LibraryName,
     version: SemVer
-  ): Boolean = findCached(libraryName, version).isDefined
+  ): Boolean = findCachedLibrary(libraryName, version).isDefined
 }

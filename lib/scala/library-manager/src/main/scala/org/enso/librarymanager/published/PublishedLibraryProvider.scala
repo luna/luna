@@ -25,4 +25,7 @@ trait PublishedLibraryProvider {
     version: SemVer,
     recommendedRepository: Repository
   ): Try[Path]
+
+  /** Tries to locate a cached version of the requested library. */
+  def findCachedLibrary(libraryName: LibraryName, version: SemVer): Option[Path]
 }
