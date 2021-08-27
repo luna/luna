@@ -1,16 +1,16 @@
 package org.enso.languageserver.libraries.handler
 
-import akka.actor.{Actor, ActorRef, Cancellable, Props}
+import akka.actor.{Actor, ActorRef, Cancellable, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
-import org.enso.jsonrpc.{Errors, Id, Request, ResponseError, ResponseResult}
+import org.enso.jsonrpc._
 import org.enso.languageserver.filemanager.FileManagerApi.FileSystemError
 import org.enso.languageserver.libraries.LibraryApi._
 import org.enso.languageserver.libraries.ProjectSettingsManager
+import org.enso.languageserver.libraries.ProjectSettingsManager.SettingsUpdated
 import org.enso.languageserver.requesthandler.RequestTimeout
 import org.enso.languageserver.util.UnhandledLogging
 
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
 
 /** A request handler for the `editions/setProjectLocalLibrariesPreference`
   * endpoint.
@@ -53,7 +53,7 @@ class EditionsSetProjectLocalLibrariesPreferenceHandler(
       replyTo ! ResponseError(Some(id), Errors.RequestTimeout)
       context.stop(self)
 
-    case Success(_) =>
+    case SettingsUpdated() =>
       replyTo ! ResponseResult(
         EditionsSetLocalLibrariesPreference,
         id,
@@ -62,7 +62,7 @@ class EditionsSetProjectLocalLibrariesPreferenceHandler(
       cancellable.cancel()
       context.stop(self)
 
-    case Failure(exception) =>
+    case Status.Failure(exception) =>
       replyTo ! ResponseError(
         Some(id),
         FileSystemError(

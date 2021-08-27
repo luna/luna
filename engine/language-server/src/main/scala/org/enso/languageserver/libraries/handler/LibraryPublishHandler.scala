@@ -1,18 +1,13 @@
 package org.enso.languageserver.libraries.handler
 
-import akka.actor.{Actor, ActorRef, Cancellable, Props}
+import akka.actor.{Actor, ActorRef, Cancellable, Props, Status}
+import akka.pattern.pipe
 import com.typesafe.scalalogging.LazyLogging
 import org.enso.cli.task.notifications.ActorProgressNotificationForwarder
 import org.enso.editions.LibraryName
-import org.enso.jsonrpc.{
-  Errors,
-  Id,
-  Request,
-  ResponseError,
-  ResponseResult,
-  Unused
-}
+import org.enso.jsonrpc._
 import org.enso.languageserver.filemanager.FileManagerApi.FileSystemError
+import org.enso.languageserver.libraries.BlockingOperation
 import org.enso.languageserver.libraries.LibraryApi._
 import org.enso.languageserver.libraries.LocalLibraryManagerProtocol.{
   FindLibrary,
@@ -22,8 +17,8 @@ import org.enso.languageserver.requesthandler.RequestTimeout
 import org.enso.languageserver.util.UnhandledLogging
 import org.enso.libraryupload.{auth, LibraryUploader}
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
 
 /** A request handler for the `library/publish` endpoint.
   *
@@ -95,39 +90,38 @@ class LibraryPublishHandler(
       replyTo ! ResponseError(Some(id), Errors.RequestTimeout)
       context.stop(self)
 
-    case Success(FindLibraryResponse(Some(libraryRoot))) =>
+    case FindLibraryResponse(Some(libraryRoot)) =>
       val progressReporter =
         ActorProgressNotificationForwarder.translateAndForward(
           LibraryPublish.name,
           replyTo
         )
 
-      val result = LibraryUploader.uploadLibrary(
-        libraryRoot,
-        uploadUrl,
-        token,
-        progressReporter
-      )
-
-      result match {
-        case Failure(exception) =>
-          replyTo ! ResponseError(
-            Some(id),
-            FileSystemError(s"Upload failed: $exception")
+      val future: Future[UploadSucceeded] = BlockingOperation.run {
+        LibraryUploader
+          .uploadLibrary(
+            libraryRoot,
+            uploadUrl,
+            token,
+            progressReporter
           )
-        case Success(_) =>
-          if (shouldBumpAfterPublishing) {
-            logger.warn(
-              "`bumpVersionAfterPublish` was set to true, but this feature " +
-              "is not currently implemented. Ignoring."
-            )
-          }
-          replyTo ! ResponseResult(LibraryPublish, id, Unused)
+          .get
+
+        UploadSucceeded()
       }
 
-      stop(timeoutCancellable)
+      future pipeTo self
 
-    case Success(FindLibraryResponse(None)) =>
+      context.become(
+        waitingForResultStage(
+          replyTo,
+          timeoutCancellable,
+          id,
+          shouldBumpAfterPublishing
+        )
+      )
+
+    case FindLibraryResponse(None) =>
       replyTo ! ResponseError(
         Some(id),
         FileSystemError(
@@ -138,7 +132,7 @@ class LibraryPublishHandler(
 
       stop(timeoutCancellable)
 
-    case Failure(exception) =>
+    case Status.Failure(exception) =>
       replyTo ! ResponseError(
         Some(id),
         FileSystemError(
@@ -148,6 +142,33 @@ class LibraryPublishHandler(
 
       stop(timeoutCancellable)
   }
+
+  private def waitingForResultStage(
+    replyTo: ActorRef,
+    timeoutCancellable: Cancellable,
+    id: Id,
+    shouldBumpAfterPublishing: Boolean
+  ): Receive = {
+    case UploadSucceeded() =>
+      if (shouldBumpAfterPublishing) {
+        logger.warn(
+          "`bumpVersionAfterPublish` was set to true, but this feature " +
+          "is not currently implemented. Ignoring."
+        )
+      }
+
+      replyTo ! ResponseResult(LibraryPublish, id, Unused)
+      stop(timeoutCancellable)
+
+    case Status.Failure(exception) =>
+      replyTo ! ResponseError(
+        Some(id),
+        FileSystemError(s"Upload failed: $exception")
+      )
+      stop(timeoutCancellable)
+  }
+
+  private case class UploadSucceeded()
 }
 
 object LibraryPublishHandler {

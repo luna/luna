@@ -1,6 +1,6 @@
 package org.enso.languageserver.libraries
 
-import akka.actor.{Actor, Props}
+import akka.actor.Props
 import org.enso.editions.{DefaultEdition, EditionResolver, Editions}
 import org.enso.pkg.PackageManager
 
@@ -11,17 +11,17 @@ import scala.util.Try
 class ProjectSettingsManager(
   projectRoot: File,
   editionResolver: EditionResolver
-) extends Actor {
+) extends BlockingSynchronizedRequestHandler {
   import ProjectSettingsManager._
 
-  override def receive: Receive = { case request: Request =>
+  def requestStage: Receive = { case request: Request =>
     request match {
       case GetSettings =>
-        sender() ! loadSettings()
+        startRequest(loadSettings())
       case SetParentEdition(editionName) =>
-        sender() ! setParentEdition(editionName)
+        startRequest(setParentEdition(editionName))
       case SetPreferLocalLibraries(preferLocalLibraries) =>
-        sender() ! setPreferLocalLibraries(preferLocalLibraries)
+        startRequest(setPreferLocalLibraries(preferLocalLibraries))
     }
   }
 
@@ -30,28 +30,29 @@ class ProjectSettingsManager(
     edition = pkg.config.edition.getOrElse(DefaultEdition.getDefaultEdition)
   } yield SettingsResponse(edition.parent, pkg.config.preferLocalLibraries)
 
-  private def setParentEdition(editionName: String): Try[Unit] = for {
-    pkg <- PackageManager.Default.loadPackage(projectRoot)
-    newEdition = pkg.config.edition match {
-      case Some(edition) => edition.copy(parent = Some(editionName))
-      case None          => Editions.Raw.Edition(parent = Some(editionName))
-    }
-    _ <- editionResolver.resolve(newEdition).toTry
-    updated = pkg.updateConfig { config =>
-      config.copy(edition = Some(newEdition))
-    }
-    _ <- updated.save()
-  } yield ()
+  private def setParentEdition(editionName: String): Try[SettingsUpdated] =
+    for {
+      pkg <- PackageManager.Default.loadPackage(projectRoot)
+      newEdition = pkg.config.edition match {
+        case Some(edition) => edition.copy(parent = Some(editionName))
+        case None          => Editions.Raw.Edition(parent = Some(editionName))
+      }
+      _ <- editionResolver.resolve(newEdition).toTry
+      updated = pkg.updateConfig { config =>
+        config.copy(edition = Some(newEdition))
+      }
+      _ <- updated.save()
+    } yield SettingsUpdated()
 
   private def setPreferLocalLibraries(
     preferLocalLibraries: Boolean
-  ): Try[Unit] = for {
+  ): Try[SettingsUpdated] = for {
     pkg <- PackageManager.Default.loadPackage(projectRoot)
     updated = pkg.updateConfig { config =>
       config.copy(preferLocalLibraries = preferLocalLibraries)
     }
     _ <- updated.save()
-  } yield ()
+  } yield SettingsUpdated()
 }
 
 object ProjectSettingsManager {
@@ -77,4 +78,9 @@ object ProjectSettingsManager {
   /** A request to set the local libraries preference. */
   case class SetPreferLocalLibraries(preferLocalLibraries: Boolean)
       extends Request
+
+  /** A response to the requests that update project settings which indicates
+    * that the settings were successfully updated.
+    */
+  case class SettingsUpdated()
 }

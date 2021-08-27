@@ -1,16 +1,9 @@
 package org.enso.languageserver.libraries.handler
 
-import akka.actor.{Actor, ActorRef, Cancellable, Props}
+import akka.actor.{Actor, ActorRef, Cancellable, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import org.enso.editions.LibraryName
-import org.enso.jsonrpc.{
-  Errors,
-  Id,
-  Request,
-  ResponseError,
-  ResponseResult,
-  Unused
-}
+import org.enso.jsonrpc._
 import org.enso.languageserver.filemanager.FileManagerApi.FileSystemError
 import org.enso.languageserver.libraries.LibraryApi._
 import org.enso.languageserver.libraries.LocalLibraryManagerProtocol
@@ -18,7 +11,6 @@ import org.enso.languageserver.requesthandler.RequestTimeout
 import org.enso.languageserver.util.UnhandledLogging
 
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
 
 /** A request handler for the `library/setMetadata` endpoint.
   *
@@ -63,7 +55,7 @@ class LibrarySetMetadataHandler(
       replyTo ! ResponseError(Some(id), Errors.RequestTimeout)
       context.stop(self)
 
-    case Success(_) =>
+    case LocalLibraryManagerProtocol.EmptyResponse() =>
       replyTo ! ResponseResult(
         LibrarySetMetadata,
         id,
@@ -72,7 +64,7 @@ class LibrarySetMetadataHandler(
       cancellable.cancel()
       context.stop(self)
 
-    case Failure(exception) =>
+    case Status.Failure(exception) =>
       replyTo ! ResponseError(Some(id), FileSystemError(exception.getMessage))
       cancellable.cancel()
       context.stop(self)

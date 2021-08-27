@@ -1,6 +1,6 @@
 package org.enso.languageserver.libraries.handler
 
-import akka.actor.{Actor, ActorRef, Cancellable, Props}
+import akka.actor.{Actor, ActorRef, Cancellable, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import org.enso.editions.LibraryName
 import org.enso.jsonrpc._
@@ -11,7 +11,6 @@ import org.enso.languageserver.requesthandler.RequestTimeout
 import org.enso.languageserver.util.UnhandledLogging
 
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
 
 /** A request handler for the `library/create` endpoint.
   *
@@ -55,12 +54,12 @@ class LibraryCreateHandler(
       replyTo ! ResponseError(Some(id), Errors.RequestTimeout)
       context.stop(self)
 
-    case Success(_) =>
+    case LocalLibraryManagerProtocol.EmptyResponse() =>
       replyTo ! ResponseResult(LibraryCreate, id, Unused)
       cancellable.cancel()
       context.stop(self)
 
-    case Failure(exception) =>
+    case Status.Failure(exception) =>
       // TODO [RW] handle LibraryAlreadyExists error
       replyTo ! ResponseError(Some(id), FileSystemError(exception.getMessage))
       cancellable.cancel()

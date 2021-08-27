@@ -53,4 +53,10 @@ object LocalLibraryManagerProtocol {
       extends RuntimeException(
         s"Local library [$libraryName] has not been found."
       )
+
+  /** Indicates that the request succeeded, but it does not have a response.
+    *
+    * Sent as a reply to [[Create]] and [[SetMetadata]].
+    */
+  case class EmptyResponse()
 }

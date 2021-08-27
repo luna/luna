@@ -23,6 +23,7 @@ class ActorToHandlerConnector extends Actor with Stash {
 
   private def initializingStage: Receive = {
     case SetRequestHandler(handler) =>
+      unstashAll()
       context.become(initializedStage(handler))
     case _ =>
       stash()

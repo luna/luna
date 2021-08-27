@@ -1,14 +1,17 @@
 package org.enso.languageserver.libraries.handler
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorRef, Props, Status}
+import akka.pattern.pipe
 import com.typesafe.scalalogging.LazyLogging
-import org.enso.jsonrpc.{Request, ResponseError, ResponseResult}
+import nl.gn0s1s.bump.SemVer
+import org.enso.jsonrpc.{Id, Request, ResponseError, ResponseResult}
 import org.enso.languageserver.filemanager.FileManagerApi.FileSystemError
-import org.enso.languageserver.libraries.EditionReferenceResolver
 import org.enso.languageserver.libraries.LibraryApi._
+import org.enso.languageserver.libraries.{
+  BlockingOperation,
+  EditionReferenceResolver
+}
 import org.enso.languageserver.util.UnhandledLogging
-
-import scala.util.{Failure, Success}
 
 /** A request handler for the `editions/resolve` endpoint.
   *
@@ -18,27 +21,34 @@ class EditionsResolveHandler(editionReferenceResolver: EditionReferenceResolver)
     extends Actor
     with LazyLogging
     with UnhandledLogging {
-  override def receive: Receive = {
+  override def receive: Receive = requestStage
+
+  import context.dispatcher
+
+  private def requestStage: Receive = {
     case Request(EditionsResolve, id, EditionsResolve.Params(reference)) =>
-      val result = for {
-        edition <- editionReferenceResolver.resolveEdition(reference)
-      } yield edition.getEngineVersion
+      BlockingOperation.run {
+        val edition = editionReferenceResolver.resolveEdition(reference).get
+        edition.getEngineVersion
+      } pipeTo self
 
-      result match {
-        case Success(engineVersion) =>
-          sender() ! ResponseResult(
-            EditionsResolve,
-            id,
-            EditionsResolve.Result(engineVersion.toString)
-          )
+      context.become(responseStage(id, sender()))
+  }
 
-        case Failure(exception) =>
-          // TODO [RW] more detailed errors
-          sender() ! ResponseError(
-            Some(id),
-            FileSystemError(exception.getMessage)
-          )
-      }
+  private def responseStage(id: Id, replyTo: ActorRef): Receive = {
+    case engineVersion: SemVer =>
+      replyTo ! ResponseResult(
+        EditionsResolve,
+        id,
+        EditionsResolve.Result(engineVersion.toString)
+      )
+
+    case Status.Failure(exception) =>
+      // TODO [RW] more detailed errors
+      replyTo ! ResponseError(
+        Some(id),
+        FileSystemError(exception.getMessage)
+      )
   }
 }
 

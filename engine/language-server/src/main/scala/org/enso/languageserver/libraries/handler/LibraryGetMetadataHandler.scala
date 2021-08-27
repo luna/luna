@@ -1,6 +1,7 @@
 package org.enso.languageserver.libraries.handler
 
-import akka.actor.{Actor, ActorRef, Cancellable, Props}
+import akka.actor.{Actor, ActorRef, Cancellable, Props, Status}
+import akka.pattern.pipe
 import com.typesafe.scalalogging.LazyLogging
 import nl.gn0s1s.bump.SemVer
 import org.enso.editions.Editions.Repository
@@ -18,7 +19,6 @@ import org.enso.librarymanager.published.repository.RepositoryHelper.RepositoryM
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
 
 /** A request handler for the `library/create` endpoint.
   *
@@ -52,7 +52,7 @@ class LibraryGetMetadataHandler(
             libraryName,
             version,
             repositoryUrl
-          ).onComplete(self ! _)
+          ) pipeTo self
       }
 
       val cancellable =
@@ -70,8 +70,9 @@ class LibraryGetMetadataHandler(
       replyTo ! ResponseError(Some(id), Errors.RequestTimeout)
       context.stop(self)
 
-    case Success(
-          LocalLibraryManagerProtocol.GetMetadataResponse(description, tagLine)
+    case LocalLibraryManagerProtocol.GetMetadataResponse(
+          description,
+          tagLine
         ) =>
       replyTo ! ResponseResult(
         LibraryGetMetadata,
@@ -81,7 +82,7 @@ class LibraryGetMetadataHandler(
       cancellable.cancel()
       context.stop(self)
 
-    case Failure(exception) =>
+    case Status.Failure(exception) =>
       replyTo ! ResponseError(Some(id), FileSystemError(exception.getMessage))
       cancellable.cancel()
       context.stop(self)
