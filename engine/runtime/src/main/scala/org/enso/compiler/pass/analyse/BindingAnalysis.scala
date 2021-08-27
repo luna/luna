@@ -4,6 +4,7 @@ import org.enso.compiler.context.{InlineContext, ModuleContext}
 import org.enso.compiler.core.IR
 import org.enso.compiler.core.ir.MetadataStorage.ToPair
 import org.enso.compiler.data.BindingsMap
+import org.enso.compiler.data.BindingsMap.ModuleReference
 import org.enso.compiler.pass.IRPass
 import org.enso.compiler.pass.desugar.{
   ComplexType,
@@ -81,7 +82,7 @@ case object BindingAnalysis extends IRPass {
         definedConstructors,
         importedPolyglot,
         methodsWithAutogen,
-        moduleContext.module
+        ModuleReference.Concrete(moduleContext.module)
       )
     )
   }

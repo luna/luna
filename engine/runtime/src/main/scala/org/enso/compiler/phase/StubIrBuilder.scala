@@ -3,7 +3,11 @@ package org.enso.compiler.phase
 import org.enso.compiler.core.IR
 import org.enso.compiler.core.ir.MetadataStorage._
 import org.enso.compiler.data.BindingsMap
-import org.enso.compiler.data.BindingsMap.{ResolvedConstructor, ResolvedMethod}
+import org.enso.compiler.data.BindingsMap.{
+  ModuleReference,
+  ResolvedConstructor,
+  ResolvedMethod
+}
 import org.enso.compiler.pass.analyse.BindingAnalysis
 import org.enso.interpreter.runtime.Module
 
@@ -39,13 +43,18 @@ object StubIrBuilder {
     val polyglot = scope.getPolyglotSymbols.asScala.keys.toList
       .map(BindingsMap.PolyglotSymbol)
     val exportedBindings = definedConstructors.map(c =>
-      (c.name.toLowerCase, List(ResolvedConstructor(module, c)))
-    ) ++ moduleMethods.map(m => (m.name, List(ResolvedMethod(module, m))))
+      (
+        c.name.toLowerCase,
+        List(ResolvedConstructor(ModuleReference.Concrete(module), c))
+      )
+    ) ++ moduleMethods.map(m =>
+      (m.name, List(ResolvedMethod(ModuleReference.Concrete(module), m)))
+    )
     val meta = BindingsMap(
       definedConstructors,
       polyglot,
       moduleMethods,
-      module
+      ModuleReference.Concrete(module)
     )
     meta.exportedSymbols = exportedBindings.toMap
     ir.updateMetadata(BindingAnalysis -->> meta)

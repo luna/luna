@@ -5,6 +5,7 @@ import org.enso.compiler.context.{FreshNameSupply, ModuleContext}
 import org.enso.compiler.core.IR
 import org.enso.compiler.data.BindingsMap.{
   Cons,
+  ModuleReference,
   Resolution,
   ResolvedConstructor,
   ResolvedModule
@@ -94,7 +95,12 @@ class UppercaseNamesTest extends CompilerTest {
         .asInstanceOf[IR.Application.Prefix]
         .function
         .getMetadata(UppercaseNames) shouldEqual Some(
-        Resolution(ResolvedConstructor(ctx.module, Cons("My_Cons", 3)))
+        Resolution(
+          ResolvedConstructor(
+            ModuleReference.Concrete(ctx.module),
+            Cons("My_Cons", 3)
+          )
+        )
       )
     }
 
@@ -105,7 +111,7 @@ class UppercaseNamesTest extends CompilerTest {
       app.function.asInstanceOf[IR.Name.Literal].name shouldEqual "constant"
       app.arguments.length shouldEqual 1
       app.arguments(0).value.getMetadata(UppercaseNames) shouldEqual Some(
-        Resolution(ResolvedModule(ctx.module))
+        Resolution(ResolvedModule(ModuleReference.Concrete(ctx.module)))
       )
     }
 
@@ -116,7 +122,7 @@ class UppercaseNamesTest extends CompilerTest {
       app.function.asInstanceOf[IR.Name.Literal].name shouldEqual "add_one"
       app.arguments.length shouldEqual 2
       app.arguments(0).value.getMetadata(UppercaseNames) shouldEqual Some(
-        Resolution(ResolvedModule(ctx.module))
+        Resolution(ResolvedModule(ModuleReference.Concrete(ctx.module)))
       )
     }
 
@@ -124,7 +130,12 @@ class UppercaseNamesTest extends CompilerTest {
       val app = bodyExprs(3).asInstanceOf[IR.Application.Prefix]
       app.arguments.length shouldBe 3
       app.function.getMetadata(UppercaseNames) shouldEqual Some(
-        Resolution(ResolvedConstructor(ctx.module, Cons("My_Cons", 3)))
+        Resolution(
+          ResolvedConstructor(
+            ModuleReference.Concrete(ctx.module),
+            Cons("My_Cons", 3)
+          )
+        )
       )
     }
 

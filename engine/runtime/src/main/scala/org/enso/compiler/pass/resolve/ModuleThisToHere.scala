@@ -3,7 +3,7 @@ package org.enso.compiler.pass.resolve
 import org.enso.compiler.context.{InlineContext, ModuleContext}
 import org.enso.compiler.core.IR
 import org.enso.compiler.data.BindingsMap
-import org.enso.compiler.data.BindingsMap.ResolvedModule
+import org.enso.compiler.data.BindingsMap.{ModuleReference, ResolvedModule}
 import org.enso.compiler.exception.CompilerError
 import org.enso.compiler.pass.IRPass
 import org.enso.compiler.pass.analyse.AliasAnalysis
@@ -46,8 +46,9 @@ case object ModuleThisToHere extends IRPass {
     ir: IR.Module,
     moduleContext: ModuleContext
   ): IR.Module = {
-    val localResolution =
-      BindingsMap.Resolution(ResolvedModule(moduleContext.module))
+    val localResolution = BindingsMap.Resolution(
+      ResolvedModule(ModuleReference.Concrete(moduleContext.module))
+    )
     val newBindings = ir.bindings.map {
       case m: IR.Module.Scope.Definition.Method =>
         if (

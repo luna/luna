@@ -1,9 +1,14 @@
 package org.enso.compiler.data
 
+import org.enso.compiler.PackageRepository
+import org.enso.compiler.PackageRepository.ModuleMap
 import org.enso.compiler.core.IR
+import org.enso.compiler.data.BindingsMap.ModuleReference
+import org.enso.compiler.exception.CompilerError
 import org.enso.compiler.pass.IRPass
 import org.enso.compiler.pass.analyse.BindingAnalysis
 import org.enso.interpreter.runtime.Module
+import org.enso.pkg.QualifiedName
 
 /** A utility structure for resolving symbols in a given module.
   *
@@ -16,7 +21,7 @@ case class BindingsMap(
   types: List[BindingsMap.Cons],
   polyglotSymbols: List[BindingsMap.PolyglotSymbol],
   moduleMethods: List[BindingsMap.ModuleMethod],
-  currentModule: Module
+  currentModule: ModuleReference
 ) extends IRPass.Metadata {
   import BindingsMap._
 
@@ -69,7 +74,7 @@ case class BindingsMap(
   ): List[ResolvedName] = {
     resolvedImports
       .filter(_.importDef.getSimpleName.name == name)
-      .map(res => ResolvedModule(res.module))
+      .map(res => ResolvedModule(ModuleReference.Concrete(res.module)))
   }
 
   private def findExportedCandidatesInImports(
@@ -99,17 +104,24 @@ case class BindingsMap(
     }
   }
 
-  private def getBindingsFrom(module: Module): BindingsMap = {
-    module.getIr.unsafeGetMetadata(
-      BindingAnalysis,
-      "imported module has no binding map info"
-    )
+  private def getBindingsFrom(module: ModuleReference): BindingsMap = {
+    module match {
+      case ModuleReference.Concrete(module) =>
+        module.getIr.unsafeGetMetadata(
+          BindingAnalysis,
+          "imported module has no binding map info"
+        )
+      case ModuleReference.Abstract(_) =>
+        throw new CompilerError(
+          "Bindings cannot be obtained from an abstract module reference."
+        )
+    }
   }
 
   /** Resolves a name in the context of current module.
     *
     * @param name the name to resolve.
-    * @return a resolution for [[name]] or an error, if the name could not be
+    * @return a resolution for `name` or an error, if the name could not be
     *         resolved.
     */
   def resolveUppercaseName(
@@ -211,7 +223,7 @@ case class BindingsMap(
           Set(
             SymbolRestriction.AllowedResolution(
               exp.getSimpleName.name.toLowerCase,
-              Some(ResolvedModule(mod))
+              Some(ResolvedModule(ModuleReference.Concrete(mod)))
             )
           )
         )
@@ -469,7 +481,7 @@ object BindingsMap {
   /** A result of successful name resolution.
     */
   sealed trait ResolvedName {
-    def module: Module
+    def module: ModuleReference
   }
 
   /** A representation of a name being resolved to a constructor.
@@ -477,28 +489,31 @@ object BindingsMap {
     * @param module the module the constructor is defined in.
     * @param cons a representation of the constructor.
     */
-  case class ResolvedConstructor(module: Module, cons: Cons)
+  case class ResolvedConstructor(module: ModuleReference, cons: Cons)
       extends ResolvedName
 
   /** A representation of a name being resolved to a module.
     *
     * @param module the module the name resolved to.
     */
-  case class ResolvedModule(module: Module) extends ResolvedName
+  case class ResolvedModule(module: ModuleReference) extends ResolvedName
 
   /** A representation of a name being resolved to a method call.
+    *
     * @param module the module defining the method.
     * @param method the method representation.
     */
-  case class ResolvedMethod(module: Module, method: ModuleMethod)
+  case class ResolvedMethod(module: ModuleReference, method: ModuleMethod)
       extends ResolvedName
 
   /** A representation of a name being resolved to a polyglot symbol.
     *
     * @param symbol the imported symbol name.
     */
-  case class ResolvedPolyglotSymbol(module: Module, symbol: PolyglotSymbol)
-      extends ResolvedName
+  case class ResolvedPolyglotSymbol(
+    module: ModuleReference,
+    symbol: PolyglotSymbol
+  ) extends ResolvedName
 
   /** A representation of an error during name resolution.
     */
@@ -531,5 +546,76 @@ object BindingsMap {
       *         not be preserved
       */
     override def duplicate(): Option[IRPass.Metadata] = Some(this)
+  }
+
+  /** A reference to a module.
+    */
+  sealed trait ModuleReference {
+
+    /** @return the qualified name of the module
+      */
+    def getName: QualifiedName
+
+    /** Convert `this` into a concrete module reference.
+      *
+      * @param moduleMap the mapping from qualified names to concrete modules
+      * @return the concrete module for this reference, if possible
+      */
+    def toConcrete(
+      moduleMap: PackageRepository.ModuleMap
+    ): Option[ModuleReference.Concrete]
+
+    /** Convert `this` into an abstract module reference.
+      *
+      * @return the abstract reference to the module represented by `this`
+      */
+    def toAbstract: ModuleReference.Abstract
+  }
+  object ModuleReference {
+
+    /** A module reference that points to a concrete [[Module]] object.
+      *
+      * @param module the module being referenced
+      */
+    case class Concrete(module: Module) extends ModuleReference {
+
+      /** @inheritdoc */
+      override def getName: QualifiedName = module.getName
+
+      /** Converts `this` into a concrete module reference (a no-op).
+        *
+        * @param moduleMap the mapping from qualified names to concrete modules
+        * @return the concrete module for this reference, if possible
+        */
+      override def toConcrete(moduleMap: ModuleMap): Option[Concrete] =
+        Some(this)
+
+      /** @inheritdoc */
+      override def toAbstract: Abstract =
+        ModuleReference.Abstract(module.getName)
+    }
+
+    /** A module reference that refers to a module by qualified name, without an
+      * explicit link to the target.
+      *
+      * @param name the qualified name (including namespace) of the module
+      *             being referenced
+      */
+    case class Abstract(name: QualifiedName) extends ModuleReference {
+
+      /** @inheritdoc */
+      override def getName: QualifiedName = name
+
+      /** @inheritdoc */
+      override def toConcrete(moduleMap: ModuleMap): Option[Concrete] = {
+        moduleMap.get(name.toString).map(Concrete)
+      }
+
+      /** Convert `this` into an abstract module reference (a no-op).
+        *
+        * @return the abstract reference to the module represented by `this`
+        */
+      override def toAbstract: Abstract = this
+    }
   }
 }

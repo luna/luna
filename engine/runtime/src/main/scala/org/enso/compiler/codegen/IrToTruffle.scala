@@ -6,6 +6,7 @@ import com.oracle.truffle.api.source.{Source, SourceSection}
 import org.enso.compiler.core.IR
 import org.enso.compiler.core.IR.Module.Scope.Import
 import org.enso.compiler.core.IR.{Error, IdentifiedLocation, Pattern}
+import org.enso.compiler.data.BindingsMap.ModuleReference
 import org.enso.compiler.data.{BindingsMap, CompilerConfig}
 import org.enso.compiler.exception.{BadPatternMatch, CompilerError}
 import org.enso.compiler.pass.analyse.AliasAnalysis.Graph.{Scope => AliasScope}
@@ -229,9 +230,13 @@ class IrToTruffle(
           .getMetadata(MethodDefinitions)
           .map { res =>
             res.target match {
-              case BindingsMap.ResolvedModule(module) =>
+              case BindingsMap
+                    .ResolvedModule(ModuleReference.Concrete(module)) =>
                 module.getScope.getAssociatedType
-              case BindingsMap.ResolvedConstructor(definitionModule, cons) =>
+              case BindingsMap.ResolvedConstructor(
+                    ModuleReference.Concrete(definitionModule),
+                    cons
+                  ) =>
                 definitionModule.getScope.getConstructors.get(cons.name)
               case BindingsMap.ResolvedPolyglotSymbol(_, _) =>
                 throw new CompilerError(
@@ -240,6 +245,10 @@ class IrToTruffle(
               case _: BindingsMap.ResolvedMethod =>
                 throw new CompilerError(
                   "Impossible here, should be caught by MethodDefinitions pass."
+                )
+              case _ =>
+                throw new CompilerError(
+                  "Abstract module references should not be present during codegen."
                 )
             }
           }
@@ -379,35 +388,63 @@ class IrToTruffle(
     )
     bindingsMap.exportedSymbols.foreach {
       case (name, List(resolution)) =>
-        if (resolution.module != moduleScope.getModule) {
+        val resolved = resolution.module match {
+          case ModuleReference.Concrete(mod) => mod
+          case ModuleReference.Abstract(_) =>
+            throw new CompilerError(
+              "Abstract module references should not be present during code generation"
+            )
+        }
+        if (resolved != moduleScope.getModule) {
           resolution match {
             case BindingsMap.ResolvedConstructor(definitionModule, cons) =>
-              val runtimeCons =
-                definitionModule.getScope.getConstructors.get(cons.name)
-              val fun = mkConsGetter(runtimeCons)
-              moduleScope.registerMethod(
-                moduleScope.getAssociatedType,
-                name,
-                fun
-              )
+              definitionModule match {
+                case ModuleReference.Concrete(definitionModule) =>
+                  val runtimeCons =
+                    definitionModule.getScope.getConstructors.get(cons.name)
+                  val fun = mkConsGetter(runtimeCons)
+                  moduleScope.registerMethod(
+                    moduleScope.getAssociatedType,
+                    name,
+                    fun
+                  )
+                case ModuleReference.Abstract(name) =>
+                  throw new CompilerError(
+                    s"Abstract reference to module $name found during codegen."
+                  )
+              }
             case BindingsMap.ResolvedModule(module) =>
-              val runtimeCons =
-                module.getScope.getAssociatedType
-              val fun = mkConsGetter(runtimeCons)
-              moduleScope.registerMethod(
-                moduleScope.getAssociatedType,
-                name,
-                fun
-              )
+              module match {
+                case ModuleReference.Concrete(module) =>
+                  val runtimeCons =
+                    module.getScope.getAssociatedType
+                  val fun = mkConsGetter(runtimeCons)
+                  moduleScope.registerMethod(
+                    moduleScope.getAssociatedType,
+                    name,
+                    fun
+                  )
+                case ModuleReference.Abstract(name) =>
+                  throw new CompilerError(
+                    s"Abstract reference to module $name found during codegen."
+                  )
+              }
             case BindingsMap.ResolvedMethod(module, method) =>
-              val fun = module.getScope.getMethods
-                .get(module.getScope.getAssociatedType)
-                .get(method.name)
-              moduleScope.registerMethod(
-                moduleScope.getAssociatedType,
-                name,
-                fun
-              )
+              module match {
+                case ModuleReference.Concrete(module) =>
+                  val fun = module.getScope.getMethods
+                    .get(module.getScope.getAssociatedType)
+                    .get(method.name)
+                  moduleScope.registerMethod(
+                    moduleScope.getAssociatedType,
+                    name,
+                    fun
+                  )
+                case ModuleReference.Abstract(name) =>
+                  throw new CompilerError(
+                    s"Abstract reference to module $name found during codegen."
+                  )
+              }
             case BindingsMap.ResolvedPolyglotSymbol(_, _) =>
           }
         }
@@ -667,13 +704,30 @@ class IrToTruffle(
                 case Some(
                       BindingsMap.Resolution(BindingsMap.ResolvedModule(mod))
                     ) =>
-                  Right(mod.getScope.getAssociatedType)
+                  mod match {
+                    case ModuleReference.Concrete(mod) =>
+                      Right(mod.getScope.getAssociatedType)
+                    case ModuleReference.Abstract(name) =>
+                      throw new CompilerError(
+                        s"Abstract reference to module $name found during codegen."
+                      )
+                  }
                 case Some(
                       BindingsMap.Resolution(
-                        BindingsMap.ResolvedConstructor(mod, cons)
+                        BindingsMap.ResolvedConstructor(
+                          mod,
+                          cons
+                        )
                       )
                     ) =>
-                  Right(mod.getScope.getConstructors.get(cons.name))
+                  mod match {
+                    case ModuleReference.Concrete(mod) =>
+                      Right(mod.getScope.getConstructors.get(cons.name))
+                    case ModuleReference.Abstract(name) =>
+                      throw new CompilerError(
+                        s"Abstract reference to module $name found during codegen."
+                      )
+                  }
                 case Some(
                       BindingsMap.Resolution(
                         BindingsMap.ResolvedPolyglotSymbol(_, _)
@@ -866,15 +920,36 @@ class IrToTruffle(
             val resolution = global.get.target
             resolution match {
               case BindingsMap.ResolvedConstructor(definitionModule, cons) =>
-                ConstructorNode.build(
-                  definitionModule.getScope.getConstructors.get(cons.name)
-                )
+                definitionModule match {
+                  case ModuleReference.Concrete(definitionModule) =>
+                    ConstructorNode.build(
+                      definitionModule.getScope.getConstructors.get(cons.name)
+                    )
+                  case ModuleReference.Abstract(name) =>
+                    throw new CompilerError(
+                      s"Abstract reference to module $name found during codegen."
+                    )
+                }
               case BindingsMap.ResolvedModule(module) =>
-                ConstructorNode.build(module.getScope.getAssociatedType)
+                module match {
+                  case ModuleReference.Concrete(module) =>
+                    ConstructorNode.build(module.getScope.getAssociatedType)
+                  case ModuleReference.Abstract(name) =>
+                    throw new CompilerError(
+                      s"Abstract reference to module $name found during codegen."
+                    )
+                }
               case BindingsMap.ResolvedPolyglotSymbol(module, symbol) =>
-                ConstantObjectNode.build(
-                  module.getScope.getPolyglotSymbols.get(symbol.name)
-                )
+                module match {
+                  case ModuleReference.Concrete(module) =>
+                    ConstantObjectNode.build(
+                      module.getScope.getPolyglotSymbols.get(symbol.name)
+                    )
+                  case ModuleReference.Abstract(name) =>
+                    throw new CompilerError(
+                      s"Abstract reference to module $name found during codegen."
+                    )
+                }
               case BindingsMap.ResolvedMethod(_, _) =>
                 throw new CompilerError(
                   "Impossible here, should be desugared by UppercaseNames resolver"

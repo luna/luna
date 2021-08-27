@@ -4,7 +4,7 @@ import org.enso.compiler.Passes
 import org.enso.compiler.context.{FreshNameSupply, ModuleContext}
 import org.enso.compiler.core.IR
 import org.enso.compiler.data.BindingsMap
-import org.enso.compiler.data.BindingsMap.Cons
+import org.enso.compiler.data.BindingsMap.{Cons, ModuleReference}
 import org.enso.compiler.pass.resolve.MethodDefinitions
 import org.enso.compiler.pass.{PassConfiguration, PassGroup, PassManager}
 import org.enso.compiler.test.CompilerTest
@@ -77,7 +77,7 @@ class MethodDefinitionsTest extends CompilerTest {
         .getMetadata(MethodDefinitions) shouldEqual Some(
         BindingsMap.Resolution(
           BindingsMap.ResolvedConstructor(
-            ctx.module,
+            ModuleReference.Concrete(ctx.module),
             Cons("Foo", 3)
           )
         )
@@ -88,7 +88,7 @@ class MethodDefinitionsTest extends CompilerTest {
         .typePointer
         .getMetadata(MethodDefinitions) shouldEqual Some(
         BindingsMap.Resolution(
-          BindingsMap.ResolvedModule(ctx.module)
+          BindingsMap.ResolvedModule(ModuleReference.Concrete(ctx.module))
         )
       )
       ir.bindings(4)
@@ -97,7 +97,7 @@ class MethodDefinitionsTest extends CompilerTest {
         .typePointer
         .getMetadata(MethodDefinitions) shouldEqual Some(
         BindingsMap.Resolution(
-          BindingsMap.ResolvedModule(ctx.module)
+          BindingsMap.ResolvedModule(ModuleReference.Concrete(ctx.module))
         )
       )
       ir.bindings(5)
@@ -112,12 +112,18 @@ class MethodDefinitionsTest extends CompilerTest {
         MethodDefinitions
       ) shouldEqual Some(
         BindingsMap.Resolution(
-          BindingsMap.ResolvedConstructor(ctx.module, Cons("Foo", 3))
+          BindingsMap.ResolvedConstructor(
+            ModuleReference.Concrete(ctx.module),
+            Cons("Foo", 3)
+          )
         )
       )
       conv1.sourceTypeName.getMetadata(MethodDefinitions) shouldEqual Some(
         BindingsMap.Resolution(
-          BindingsMap.ResolvedConstructor(ctx.module, Cons("Bar", 0))
+          BindingsMap.ResolvedConstructor(
+            ModuleReference.Concrete(ctx.module),
+            Cons("Bar", 0)
+          )
         )
       )
 
@@ -128,7 +134,10 @@ class MethodDefinitionsTest extends CompilerTest {
         MethodDefinitions
       ) shouldEqual Some(
         BindingsMap.Resolution(
-          BindingsMap.ResolvedConstructor(ctx.module, Cons("Bar", 0))
+          BindingsMap.ResolvedConstructor(
+            ModuleReference.Concrete(ctx.module),
+            Cons("Bar", 0)
+          )
         )
       )
       conv2.sourceTypeName shouldBe an[IR.Error.Resolution]
@@ -139,7 +148,10 @@ class MethodDefinitionsTest extends CompilerTest {
       conv3.methodReference.typePointer shouldBe an[IR.Error.Resolution]
       conv3.sourceTypeName.getMetadata(MethodDefinitions) shouldEqual Some(
         BindingsMap.Resolution(
-          BindingsMap.ResolvedConstructor(ctx.module, Cons("Foo", 3))
+          BindingsMap.ResolvedConstructor(
+            ModuleReference.Concrete(ctx.module),
+            Cons("Foo", 3)
+          )
         )
       )
     }

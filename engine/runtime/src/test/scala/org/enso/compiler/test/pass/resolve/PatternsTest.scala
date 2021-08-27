@@ -5,6 +5,7 @@ import org.enso.compiler.context.{FreshNameSupply, ModuleContext}
 import org.enso.compiler.core.IR
 import org.enso.compiler.data.BindingsMap.{
   Cons,
+  ModuleReference,
   Resolution,
   ResolvedConstructor
 }
@@ -85,7 +86,12 @@ class PatternsTest extends CompilerTest {
         .asInstanceOf[IR.Pattern.Constructor]
         .constructor
         .getMetadata(Patterns) shouldEqual Some(
-        Resolution(ResolvedConstructor(ctx.module, Cons("Foo", 3)))
+        Resolution(
+          ResolvedConstructor(
+            ModuleReference.Concrete(ctx.module),
+            Cons("Foo", 3)
+          )
+        )
       )
       patterns(1) shouldBe a[IR.Error.Pattern]
       patterns(2)

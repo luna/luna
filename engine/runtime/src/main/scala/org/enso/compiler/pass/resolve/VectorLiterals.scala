@@ -4,6 +4,7 @@ import org.enso.compiler.context.{InlineContext, ModuleContext}
 import org.enso.compiler.core.IR
 import org.enso.compiler.core.ir.MetadataStorage.ToPair
 import org.enso.compiler.data.BindingsMap
+import org.enso.compiler.data.BindingsMap.ModuleReference
 import org.enso.compiler.pass.IRPass
 import org.enso.compiler.pass.analyse.BindingAnalysis
 
@@ -86,7 +87,10 @@ case object VectorLiterals extends IRPass {
         val withRes = name.updateMetadata(
           UppercaseNames -->> BindingsMap.Resolution(
             BindingsMap
-              .ResolvedConstructor(module, BindingsMap.Cons("Vector", 1))
+              .ResolvedConstructor(
+                ModuleReference.Concrete(module),
+                BindingsMap.Cons("Vector", 1)
+              )
           )
         )
         withRes

@@ -3,7 +3,7 @@ package org.enso.compiler.test.pass.analyse
 import org.enso.compiler.Passes
 import org.enso.compiler.context.{FreshNameSupply, ModuleContext}
 import org.enso.compiler.core.IR
-import org.enso.compiler.data.BindingsMap.{Cons, ModuleMethod, PolyglotSymbol}
+import org.enso.compiler.data.BindingsMap.{Cons, ModuleMethod, ModuleReference, PolyglotSymbol}
 import org.enso.compiler.pass.analyse.BindingAnalysis
 import org.enso.compiler.pass.{PassConfiguration, PassGroup, PassManager}
 import org.enso.compiler.test.CompilerTest
@@ -82,7 +82,7 @@ class BindingAnalysisTest extends CompilerTest {
         ModuleMethod("enso_project"),
         ModuleMethod("foo")
       )
-      metadata.currentModule shouldEqual ctx.module
+      metadata.currentModule shouldEqual ModuleReference.Concrete(ctx.module)
     }
 
     "properly assign module-level methods when a type with the same name as module is defined" in {

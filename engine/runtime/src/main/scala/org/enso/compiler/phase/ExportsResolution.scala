@@ -3,6 +3,7 @@ package org.enso.compiler.phase
 import org.enso.compiler.data.BindingsMap
 import org.enso.compiler.data.BindingsMap.{
   ExportedModule,
+  ModuleReference,
   ResolvedConstructor,
   ResolvedMethod,
   ResolvedModule,
@@ -161,17 +162,26 @@ class ExportsResolution {
     modules.foreach { module =>
       val bindings = getBindings(module)
       val ownMethods = bindings.moduleMethods.map(method =>
-        (method.name.toLowerCase, List(ResolvedMethod(module, method)))
+        (
+          method.name.toLowerCase,
+          List(ResolvedMethod(ModuleReference.Concrete(module), method))
+        )
       )
       val ownConstructors = bindings.types.map(tp =>
-        (tp.name.toLowerCase, List(ResolvedConstructor(module, tp)))
+        (
+          tp.name.toLowerCase,
+          List(ResolvedConstructor(ModuleReference.Concrete(module), tp))
+        )
       )
       val ownPolyglotBindings = bindings.polyglotSymbols.map(poly =>
-        (poly.name.toLowerCase, List(ResolvedPolyglotSymbol(module, poly)))
+        (
+          poly.name.toLowerCase,
+          List(ResolvedPolyglotSymbol(ModuleReference.Concrete(module), poly))
+        )
       )
       val exportedModules = bindings.resolvedExports.collect {
         case ExportedModule(mod, Some(name), _) =>
-          (name.toLowerCase, List(ResolvedModule(mod)))
+          (name.toLowerCase, List(ResolvedModule(ModuleReference.Concrete(mod))))
       }
       val reExportedSymbols = bindings.resolvedExports.flatMap { export =>
         getBindings(export.module).exportedSymbols.toList.flatMap {

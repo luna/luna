@@ -5,6 +5,7 @@ import org.enso.compiler.core.IR
 import org.enso.compiler.core.ir.MetadataStorage.ToPair
 import org.enso.compiler.data.BindingsMap
 import org.enso.compiler.data.BindingsMap.{
+  ModuleReference,
   Resolution,
   ResolvedConstructor,
   ResolvedMethod
@@ -251,15 +252,23 @@ case object UppercaseNames extends IRPass {
   ): Option[BindingsMap.ResolvedConstructor] =
     thisResolution.target match {
       case BindingsMap.ResolvedModule(module) =>
-        val resolution = module.getIr
-          .unsafeGetMetadata(
-            BindingAnalysis,
-            "Imported module without bindings analysis results"
-          )
-          .resolveExportedName(consName.name)
-        resolution match {
-          case Right(cons @ ResolvedConstructor(_, _)) => Some(cons)
-          case _                                       => None
+        module match {
+          case ModuleReference.Concrete(module) =>
+            val resolution = module.getIr
+              .unsafeGetMetadata(
+                BindingAnalysis,
+                "Imported module without bindings analysis results"
+              )
+              .resolveExportedName(consName.name)
+            resolution match {
+              case Right(cons @ ResolvedConstructor(_, _)) => Some(cons)
+              case _                                       => None
+            }
+          case ModuleReference.Abstract(name) =>
+            throw new CompilerError(
+              s"Abstract reference to module $name found during " +
+              s"UppercaseNames resolution."
+            )
         }
       case _ => None
     }

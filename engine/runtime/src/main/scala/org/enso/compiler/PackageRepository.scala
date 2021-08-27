@@ -18,7 +18,6 @@ import org.enso.logger.masking.MaskedPath
 import org.enso.pkg.{Package, PackageManager, QualifiedName}
 
 import java.nio.file.Path
-import scala.collection.concurrent
 import scala.util.Try
 
 /** Manages loaded packages and modules. */
@@ -46,11 +45,11 @@ trait PackageRepository {
     *
     * This map may be updated concurrently.
     */
-  def getModuleMap: collection.concurrent.Map[String, Module]
+  def getModuleMap: PackageRepository.ModuleMap
 
   /** Gets a frozen form of the module map that cannot be updated concurrently.
     */
-  def freezeModuleMap: Map[String, Module]
+  def freezeModuleMap: PackageRepository.FrozenModuleMap
 
   /** Get a loaded module by its qualified name. */
   def getLoadedModule(qualifiedName: String): Option[Module]
@@ -74,6 +73,9 @@ trait PackageRepository {
 }
 
 object PackageRepository {
+
+  type ModuleMap       = collection.concurrent.Map[String, Module]
+  type FrozenModuleMap = Map[String, Module]
 
   /** A trait representing errors reported by this system */
   sealed trait Error
@@ -154,10 +156,10 @@ object PackageRepository {
       collection.concurrent.TrieMap(Builtins.MODULE_NAME -> builtins.getModule)
 
     /** @inheritdoc */
-    override def getModuleMap: concurrent.Map[String, Module] = loadedModules
+    override def getModuleMap: ModuleMap = loadedModules
 
     /** @inheritdoc */
-    override def freezeModuleMap: Map[String, Module] = loadedModules.toMap
+    override def freezeModuleMap: FrozenModuleMap = loadedModules.toMap
 
     /** @inheritdoc */
     override def registerMainProjectPackage(
