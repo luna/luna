@@ -1,0 +1,8 @@
+name: Google_Api_Test
+namespace: local
+version: 0.0.1
+license: ''
+authors: []
+maintainers: []
+edition: 2021.14-SNAPSHOT
+prefer-local-libraries: true

@@ -1,0 +1,59 @@
+from Standard.Base import all
+import Standard.Table
+
+polyglot java import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+polyglot java import com.google.api.services.sheets.v4.SheetsScopes
+polyglot java import java.util.Collections
+polyglot java import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport
+polyglot java import com.google.api.client.json.gson.GsonFactory
+polyglot java import com.google.api.services.sheets.v4.Sheets
+
+## PRIVATE
+type Google_Api_Client
+    ## PRIVATE
+    type Google_Api_Client credential json_factory http_transport
+
+    ## Accesses a service responsible for working with Google Spreadsheets.
+
+       Arguments:
+       - app_name: the application name to use for making the API calls. This
+         will show up in access logs etc.
+    spreadsheets : Text -> Spreadsheets_Service
+    spreadsheets app_name='Enso' =
+        service = Sheets.Builder.new this.http_transport this.json_factory this.credential . setApplicationName app_name . build
+        Spreadsheets_Service service
+
+## PRIVATE
+type Spreadsheets_Service
+    ## PRIVATE
+    type Spreadsheets_Service java_service
+
+    ## Gets a table with the given ID and sheet range.
+
+       Arguments:
+       - sheet_id: the ID of the downloaded spreadsheet. It can be read from the
+         spreadsheet URL.
+       - sheet_range: specifies the sheet and cell range to read, e.g.
+         `'Sheet1!A1:B7'`.
+    get_table : Text -> Text -> Table
+    get_table sheet_id sheet_range =
+        request = this.java_service.spreadsheets.values.get sheet_id sheet_range . setMajorDimension 'COLUMNS' . setValueRenderOption 'UNFORMATTED_VALUE'
+        response = request.execute
+        values = Vector.Vector response.getValues . map Vector.Vector
+        columned = values.map v-> [v.head, v.tail]
+        Table.new columned
+
+## Initializes the Google services instance using the given credentials file.
+
+   Arguments:
+   - secret_file: a file containing Google Service Account credentials to use to
+     access Google services.
+initialize : File.File -> Google_Api_Client
+initialize secret_file =
+    credential = secret_file.with_input_stream [File.Option.Read] stream->
+        stream.with_java_stream is->
+            GoogleCredential.fromStream is . createScoped (Collections.singleton SheetsScopes.SPREADSHEETS)
+    http_transport = GoogleNetHttpTransport.newTrustedTransport
+    json_factory = GsonFactory.getDefaultInstance
+    Google_Api_Client credential json_factory http_transport
+

@@ -1,0 +1,10 @@
+name: Google_Api
+namespace: Standard
+version: 0.2.26-SNAPSHOT
+license: APLv2
+authors:
+  - name: Enso Team
+    email: contact@enso.org
+maintainers:
+  - name: Enso Team
+    email: contact@enso.org

@@ -1,0 +1,18 @@
+from Standard.Base import all
+import Standard.Google_Api
+import Standard.Test
+
+main = Test.Suite.run_main <|
+    secret = Enso_Project.data / 'secret.json'
+    api = Google_Api.initialize secret
+
+    Test.group "Google Spreadsheets"
+
+        Test.specify "should allow downloading a spreadsheet"
+            sheet_id = '1WjVQhYdc04RwdWB22RNLgfQiLeWYhxiij1_xj22RDq0'
+            sheet_range = 'Sheet1!A1:B6'
+            table = api.spreadsheets.get_table sheet_id sheet_range
+            table.columns.map .name . should_equal ["Foo", "Bar"]
+            table.at 'Foo' . to_vector . should_equal [1,2,3,4,5]
+            table.at 'Bar' . to_vector . should_equal ["hello", "world", "foo", "bar", "baz"]
+

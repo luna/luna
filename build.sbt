@@ -96,6 +96,10 @@ GatherLicenses.distributions := Seq(
     Distribution.sbtProjects(`project-manager`)
   ),
   makeStdLibDistribution("Base", Distribution.sbtProjects(`std-base`)),
+  makeStdLibDistribution(
+    "Google_Api",
+    Distribution.sbtProjects(`std-google-api`)
+  ),
   makeStdLibDistribution("Table", Distribution.sbtProjects(`std-table`)),
   makeStdLibDistribution("Database", Distribution.sbtProjects(`std-database`)),
   makeStdLibDistribution("Image", Distribution.sbtProjects(`std-image`))
@@ -1146,6 +1150,7 @@ lazy val runtime = (project in file("engine/runtime"))
       .dependsOn(`std-base` / Compile / packageBin)
       .dependsOn(`std-image` / Compile / packageBin)
       .dependsOn(`std-database` / Compile / packageBin)
+      .dependsOn(`std-google-api` / Compile / packageBin)
       .dependsOn(`std-table` / Compile / packageBin)
       .value
   )
@@ -1508,6 +1513,8 @@ def stdLibComponentRoot(name: String): File =
 val `base-polyglot-root`  = stdLibComponentRoot("Base") / "polyglot" / "java"
 val `table-polyglot-root` = stdLibComponentRoot("Table") / "polyglot" / "java"
 val `image-polyglot-root` = stdLibComponentRoot("Image") / "polyglot" / "java"
+val `google-api-polyglot-root` =
+  stdLibComponentRoot("Google_Api") / "polyglot" / "java"
 val `database-polyglot-root` =
   stdLibComponentRoot("Database") / "polyglot" / "java"
 
@@ -1574,6 +1581,29 @@ lazy val `std-image` = project
         .copyDependencies(
           `image-polyglot-root`,
           Some("std-image.jar"),
+          ignoreScalaLibrary = true
+        )
+        .value
+      result
+    }.value
+  )
+
+lazy val `std-google-api` = project
+  .in(file("std-bits") / "google-api")
+  .settings(
+    autoScalaLibrary := false,
+    Compile / packageBin / artifactPath :=
+      `google-api-polyglot-root` / "std-image.jar",
+    libraryDependencies ++= Seq(
+      "com.google.api-client" % "google-api-client"          % "1.32.1",
+      "com.google.apis"       % "google-api-services-sheets" % "v4-rev612-1.25.0"
+    ),
+    Compile / packageBin := Def.task {
+      val result = (Compile / packageBin).value
+      val _ = StdBits
+        .copyDependencies(
+          `google-api-polyglot-root`,
+          Some("std-google-api.jar"),
           ignoreScalaLibrary = true
         )
         .value

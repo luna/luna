@@ -2,6 +2,8 @@ package org.enso.table.data.column.builder.object;
 
 import org.enso.table.data.column.storage.Storage;
 
+import java.math.BigDecimal;
+
 /**
  * A builder performing type inference on the appended elements, choosing the best possible storage.
  */
@@ -48,7 +50,7 @@ public class InferredBuilder extends Builder {
           }
           break;
         case Storage.Type.DOUBLE:
-          if (o instanceof Double) {
+          if (o instanceof Double || o instanceof BigDecimal) {
             currentBuilder.appendNoGrow(o);
           } else if (o instanceof Long) {
             currentBuilder.appendNoGrow(((Long) o).doubleValue());
@@ -100,7 +102,7 @@ public class InferredBuilder extends Builder {
           }
           break;
         case Storage.Type.DOUBLE:
-          if (o instanceof Double) {
+          if (o instanceof Double || o instanceof BigDecimal) {
             currentBuilder.append(o);
           } else if (o instanceof Long) {
             currentBuilder.append(((Long) o).doubleValue());
@@ -135,7 +137,7 @@ public class InferredBuilder extends Builder {
     int initialCapacity = Math.max(initialSize, currentSize);
     if (o instanceof Boolean) {
       currentBuilder = new BoolBuilder();
-    } else if (o instanceof Double) {
+    } else if (o instanceof Double || o instanceof BigDecimal) {
       currentBuilder = NumericBuilder.createDoubleBuilder(initialCapacity);
     } else if (o instanceof Long) {
       currentBuilder = NumericBuilder.createLongBuilder(initialCapacity);
@@ -148,7 +150,8 @@ public class InferredBuilder extends Builder {
   }
 
   private void retypeAndAppend(Object o) {
-    if (o instanceof Double && currentBuilder.canRetypeTo(Storage.Type.DOUBLE)) {
+    if ((o instanceof Double || o instanceof BigDecimal)
+        && currentBuilder.canRetypeTo(Storage.Type.DOUBLE)) {
       currentBuilder = currentBuilder.retypeTo(Storage.Type.DOUBLE);
     } else if (o instanceof String && currentBuilder.canRetypeTo(Storage.Type.STRING)) {
       currentBuilder = currentBuilder.retypeTo(Storage.Type.STRING);

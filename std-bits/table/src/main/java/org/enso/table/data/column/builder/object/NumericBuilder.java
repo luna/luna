@@ -1,5 +1,6 @@
 package org.enso.table.data.column.builder.object;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.BitSet;
 import org.enso.table.data.column.storage.DoubleStorage;
@@ -70,6 +71,8 @@ public class NumericBuilder extends TypedBuilder {
       data[currentSize++] = Double.doubleToRawLongBits((Double) o);
     } else if (!isDouble && o instanceof Long) {
       data[currentSize++] = (Long) o;
+    } else if (isDouble && o instanceof BigDecimal) {
+      data[currentSize++] = Double.doubleToRawLongBits(((BigDecimal) o).doubleValue());
     } else {
       throw new UnsupportedOperationException();
     }

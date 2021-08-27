@@ -245,8 +245,11 @@ jobs:
       - name: Prepare Engine Test Environment
         shell: bash
         run: |
+          echo "$GDOC_KEY" > test/Google_Api_Test/data/secret.json
           go get -v github.com/ahmetb/go-httpbin/cmd/httpbin
           $(go env GOPATH)/bin/httpbin -host :8080 &
+        env:
+          GDOC_KEY: ${{secrets.GDOC_TEST_CREDENTIAL}}
 
       - name: Install Graalpython & FastR
         if: runner.os != 'Windows'
